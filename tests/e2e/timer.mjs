@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 
-const PORTA_VITE = 5199;
+const PORTA_VITE = Number(process.env.NK_PORTA_VITE ?? 5199);
 const PORTA_CHROME = 9340;
 const RAIZ = new URL("../../", import.meta.url).pathname;
 
