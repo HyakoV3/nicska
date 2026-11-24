@@ -5,11 +5,7 @@ updates:
     schedule:
       interval: weekly
     ignore:
-      # SvelteKit 3 e o adapter-static 4 andam juntos: migração planejada, não automática
-      - dependency-name: "@sveltejs/kit"
-        update-types: [version-update:semver-major]
-      - dependency-name: "@sveltejs/adapter-static"
-        update-types: [version-update:semver-major]
+      # majors que exigem migração planejada (o SvelteKit 3 já foi adotado em 2026-11-24)
       - dependency-name: typescript
         update-types: [version-update:semver-major]
       - dependency-name: "@types/node"
