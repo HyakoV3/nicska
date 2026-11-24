@@ -54,7 +54,7 @@ npm run test:e2e             # concha do app num Chrome de verdade, mudo (precis
 python3 tools/verificar-traducoes.py && python3 tools/verificar-movimento.py && python3 tools/contraste.py
 ```
 
-Os testes em Rust: `cargo test --lib` em `src-tauri`. APK de teste local: [`docs/apk-de-teste.md`](docs/apk-de-teste.md).
+Os testes em Rust (também rodam no CI): `cargo test --lib` em `src-tauri`. APK de teste local: [`docs/apk-de-teste.md`](docs/apk-de-teste.md).
 
 ## Releases e lojas
 
