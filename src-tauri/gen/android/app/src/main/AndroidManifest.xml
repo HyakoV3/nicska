@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Timer armado com a tela bloqueada: serviço em primeiro plano (apito + microfone), com notificação "Parar" e CPU acordada. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- O timer escuta o microfone (getUserMedia na WebView). O wry pede a permissão em tempo de execução, só ao armar. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Escutar com a tela bloqueada: o serviço em primeiro plano tem o tipo microfone (Android 14 em diante exige a permissão do tipo). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Vibração do app (navigator.vibrate na WebView): confirmação tátil do Standby e das batidas, essencial para quem usa abafador. Sem esta permissão a WebView ignora a vibração. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- SPIKE EXPERIMENTAL de vídeo (tela escondida /spike-video, docs/spike-video.md): o wry pede CAMERA em tempo de execução para getUserMedia({video}) e a NEGA se ela não estiver declarada aqui.
+         Reavaliar (remover ou manter) ANTES do release. A câmera e o autofoco não são obrigatórios: sem eles o app continua instalável (e o manifesto tem leanback). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <!-- AndroidTV support -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+
+    <!-- Sem backup na nuvem nem transferência entre aparelhos: as tentativas, gravações e ajustes ficam só no aparelho (SECURITY.md). -->
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.nicska"
+        android:usesCleartextTraffic="${usesCleartextTraffic}">
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:launchMode="singleTask"
+            android:label="@string/main_activity_title"
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <!-- AndroidTV support -->
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <!-- Abrir um arquivo .json do Nicska (percurso compartilhado ou backup) vindo do WhatsApp, do gerenciador de arquivos etc. O WhatsApp às vezes manda
+                 application/octet-stream; o conteúdo é conferido no app (formato nicska/1 ou nicska-backup/1), então um arquivo de outro tipo é recusado com aviso. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".ServicoAudio"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback|microphone" />
+
+        <provider
+          android:name="androidx.core.content.FileProvider"
+          android:authorities="${applicationId}.fileprovider"
+          android:exported="false"
+          android:grantUriPermissions="true">
+          <meta-data
+            android:name="android.support.FILE_PROVIDER_PATHS"
+            android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

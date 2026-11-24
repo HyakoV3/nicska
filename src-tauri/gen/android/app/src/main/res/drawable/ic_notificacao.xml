@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone pequeno da notificação de reprodução: silhueta de um cronômetro (círculo com ponteiro e botão no topo), de uma cor só (o Android pinta). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Botão no topo -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M9.5,1h5v2.2h-5z" />
+    <!-- Corpo: aro (anel) com o ponteiro recortado no meio -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M12,4.2a8.8,8.8 0,1 0,0 17.6a8.8,8.8 0,1 0,0 -17.6zM12,6.4a6.6,6.6 0,1 1,0 13.2a6.6,6.6 0,1 1,0 -13.2z" />
+    <!-- Ponteiro -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11,8.4h2v5.2h-2z" />
+</vector>

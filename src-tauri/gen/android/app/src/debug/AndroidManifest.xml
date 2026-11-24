@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Só no debug: o servidor de desenvolvimento do Tauri (npm run dev) é carregado por HTTP. O release não pede rede. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

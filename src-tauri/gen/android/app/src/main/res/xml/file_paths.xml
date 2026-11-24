@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Só o cache do envio (`cache/compartilhar/`, onde a PonteCompartilhar grava cada arquivo): o FileProvider não expõe o resto do cache nem do armazenamento. -->
+  <cache-path name="compartilhar" path="compartilhar/" />
+</paths>

@@ -1,0 +1,11 @@
+name: Ideia ou pedido
+description: Uma melhoria ou recurso novo
+labels: [ideia]
+body:
+  - type: textarea
+    id: ideia
+    attributes: { label: A ideia, description: "O problema que ela resolve e como você imagina." }
+    validations: { required: true }
+  - type: textarea
+    id: alternativas
+    attributes: { label: Alternativas ou como outros apps fazem }

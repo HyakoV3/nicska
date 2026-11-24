@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">"Nicska"</string>
+    <string name="main_activity_title">"Nicska"</string>
+    <string name="canal_timer">Timer armado</string>
+    <string name="notificacao_armado">Timer armado</string>
+    <string name="notificacao_parar">Parar</string>
+</resources>

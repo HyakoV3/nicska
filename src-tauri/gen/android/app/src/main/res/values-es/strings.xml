@@ -1,0 +1,5 @@
+<resources>
+    <string name="canal_timer">Temporizador armado</string>
+    <string name="notificacao_armado">Temporizador armado</string>
+    <string name="notificacao_parar">Detener</string>
+</resources>

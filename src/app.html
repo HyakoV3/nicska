@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Nicska</title>
+    <script>
+      // Aplica o tema salvo antes da primeira pintura (evita piscar). Mantém em sintonia com src/lib/tema.svelte.ts.
+      // Numa função própria, para as variáveis não virarem globais (window.t, window.e).
+      (function () {
+        try {
+          var t = localStorage.getItem("tema");
+          if (t === "claro" || t === "escuro" || t === "alto-contraste") document.documentElement.dataset.tema = t;
+          // Estilos de cor (lista e chave em src/lib/estilos.ts; o "normal" não leva atributo).
+          var e = localStorage.getItem("estilo");
+          // Os valores antigos do projeto de origem ("pergaminho", "marinho") passam a "titanio" e "telemetria".
+          if (e === "pergaminho") e = "titanio";
+          if (e === "marinho") e = "telemetria";
+          if (e === "titanio" || e === "telemetria") document.documentElement.dataset.estilo = e;
+        } catch (erro) {}
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

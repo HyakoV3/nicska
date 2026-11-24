@@ -1,0 +1,174 @@
+name: release
+
+# Gera o APK e o AAB assinados do Android.
+#  - Tag `vX.Y.Z` (ex.: v0.1.0): compila, confere, cria o GitHub Release com APK, AAB e SHA256SUMS
+#    (e, se o segredo PLAY_SERVICE_ACCOUNT_JSON existir, envia o AAB à faixa interna da Play Store como rascunho).
+#  - Sob demanda (Actions > release > Run workflow): compila um APK de TESTE, só como artefato do job (não cria release).
+# Segredos (Settings > Secrets and variables > Actions), todos fora do repositório:
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD   (chave de envio, obrigatórios na tag)
+#   PLAY_SERVICE_ACCOUNT_JSON                                                                      (opcional: envio à Play Store)
+# Passo a passo e decisões: docs/release-e-apk-no-github.md e docs/play-store.md.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NDK_VERSION: 30.0.16248370
+  ANDROID_PLATFORM: android-37.0
+  ANDROID_BUILD_TOOLS: 36.0.0
+
+jobs:
+  android:
+    name: Android (APK e AAB)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    outputs:
+      versao: ${{ steps.versao.outputs.versao }}
+      assinado: ${{ steps.chave.outputs.assinado }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Versão (a tag tem que bater com package.json, Cargo.toml e tauri.conf.json)
+        id: versao
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          tauri=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -1)
+          echo "package.json=$pkg tauri.conf.json=$tauri Cargo.toml=$cargo"
+          [ "$pkg" = "$tauri" ] && [ "$pkg" = "$cargo" ] || { echo "::error::as três versões precisam ser iguais"; exit 1; }
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then
+            [ "${GITHUB_REF_NAME}" = "v$pkg" ] || { echo "::error::a tag ${GITHUB_REF_NAME} não bate com a versão v$pkg"; exit 1; }
+          fi
+          echo "versao=$pkg" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Rust (versão do rust-toolchain.toml) e alvo do Android
+        run: |
+          rustup show active-toolchain
+          rustup target add aarch64-linux-android
+
+      - name: SDK e NDK do Android
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;$ANDROID_PLATFORM" "build-tools;$ANDROID_BUILD_TOOLS" "ndk;$NDK_VERSION"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS" >> "$GITHUB_PATH"
+
+      - run: npm ci
+      - name: Portão antes de compilar (tipos e testes)
+        run: |
+          npm run check
+          npm test
+
+      - name: Chave de assinatura
+        id: chave
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ks="$RUNNER_TEMP/assinatura.jks"
+          if [ -n "$KS_B64" ] && [ -n "$KS_PASS" ] && [ -n "$KS_ALIAS" ]; then
+            echo "$KS_B64" | base64 -d > "$ks"
+            echo "::add-mask::$KS_PASS"
+            { echo "NICSKA_KEYSTORE=$ks"; echo "NICSKA_KEYSTORE_PASSWORD=$KS_PASS"; echo "NICSKA_KEY_ALIAS=$KS_ALIAS"; echo "NICSKA_KEY_PASSWORD=${KS_KEY_PASS:-$KS_PASS}"; } >> "$GITHUB_ENV"
+            echo "assinado=sim" >> "$GITHUB_OUTPUT"
+          elif [ "${GITHUB_REF_TYPE}" = tag ]; then
+            echo "::error::release por tag exige os segredos ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD e ANDROID_KEY_ALIAS"
+            exit 1
+          else
+            # Build de teste sem segredos: chave descartável, só para o APK instalar. NÃO serve para a loja.
+            senha=teste-descartavel
+            keytool -genkeypair -keystore "$ks" -storepass "$senha" -keypass "$senha" -alias teste -keyalg RSA -keysize 2048 -validity 3 -dname "CN=Nicska teste" > /dev/null
+            { echo "NICSKA_KEYSTORE=$ks"; echo "NICSKA_KEYSTORE_PASSWORD=$senha"; echo "NICSKA_KEY_ALIAS=teste"; echo "NICSKA_KEY_PASSWORD=$senha"; } >> "$GITHUB_ENV"
+            echo "assinado=teste" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compilar o APK (arm64)
+        run: npm run tauri -- android build --apk --target aarch64 --ci
+      - name: Compilar o AAB (arm64)
+        if: github.ref_type == 'tag'
+        run: npm run tauri -- android build --aab --target aarch64 --ci
+
+      - name: Reunir, conferir e somar (SHA-256)
+        run: |
+          v="${{ steps.versao.outputs.versao }}"
+          mkdir -p saida
+          apk=$(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' | head -1)
+          [ -n "$apk" ] || { echo "::error::APK não encontrado"; exit 1; }
+          cp "$apk" "saida/nicska-$v.apk"
+          aab=$(find src-tauri/gen/android/app/build/outputs/bundle -name '*.aab' | head -1 || true)
+          [ -n "$aab" ] && cp "$aab" "saida/nicska-$v.aab"
+          apksigner verify --verbose --print-certs "saida/nicska-$v.apk"
+          # o app não pede rede: INTERNET fora; CAMERA e RECORD_AUDIO são os do modo vídeo e da escuta
+          permissoes=$(aapt dump permissions "saida/nicska-$v.apk")
+          echo "$permissoes"
+          if echo "$permissoes" | grep -q 'android.permission.INTERNET'; then echo "::error::o APK pede INTERNET"; exit 1; fi
+          (cd saida && sha256sum * > SHA256SUMS && cat SHA256SUMS)
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nicska-${{ steps.versao.outputs.versao }}-${{ steps.chave.outputs.assinado == 'sim' && 'assinado' || 'teste' }}
+          path: saida/
+          retention-days: 30
+          if-no-files-found: error
+
+  publicar:
+    name: GitHub Release
+    if: github.ref_type == 'tag'
+    needs: android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: nicska-*
+          merge-multiple: true
+          path: saida
+      - name: Criar o release (pré-lançamento se a tag tiver sufixo, como v0.2.0-rc1)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          pre=""; case "${GITHUB_REF_NAME}" in *-*) pre="--prerelease";; esac
+          gh release create "${GITHUB_REF_NAME}" saida/* --title "Nicska ${GITHUB_REF_NAME#v}" --generate-notes $pre
+
+  play:
+    name: Play Store (faixa interna, rascunho)
+    # Só roda com o segredo; o app precisa já existir no Play Console (docs/play-store.md).
+    if: github.ref_type == 'tag' && vars.ENVIAR_PLAY_STORE == 'true'
+    needs: android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: nicska-*
+          merge-multiple: true
+          path: saida
+      - uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ vars.ANDROID_APPLICATION_ID }}
+          releaseFiles: saida/*.aab
+          track: internal
+          status: draft

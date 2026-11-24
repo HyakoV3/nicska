@@ -1,0 +1,349 @@
+/*
+ * Tokens semânticos de cor (docs/design-tokens.md; playbook de temas do Nicska). Dois eixos independentes:
+ *   modo    Automático (segue o sistema), Claro, Escuro ou Alto contraste (data-tema no <html>; src/lib/tema.svelte.ts)
+ *   estilo  Normal, Titânio ou Telemetria (data-estilo; src/lib/estilos.ts), cada um com versão clara e escura: 3 x 2 = 6 paletas.
+ * O Alto contraste tem paleta própria, vale em qualquer estilo e fica no FIM do arquivo (vence os claros dos estilos pela ordem, que têm a mesma
+ * especificidade). Os escuros "do sistema" o excluem com :not(...), senão, com o aparelho no escuro, venceriam o bloco dele.
+ * Cada estilo repete os mesmos três blocos (claro, escuro do sistema, escuro escolhido) e a ordem importa: o escuro do estilo tem seletor mais
+ * específico, então vence o claro do estilo quando o modo é escuro. Os dois blocos escuros de um estilo precisam ter os mesmos valores.
+ *
+ * Regra das cores: --acento é AÇÃO (links, foco, aba selecionada, contornos) e --acento-botao é o preenchimento do botão primário (texto em --acento-texto); --tempo-* é MEDIÇÃO (o tempo em evidência, a marca do apito). O
+ * vermelho do tempo NÃO é o vermelho de erro (--perigo): erro, sucesso e aviso levam sempre texto e ícone, nunca só a cor.
+ * Nenhum componente usa HEX: só estes tokens. Exceção: o logotipo e os ícones (identidade fixa, --marca-*).
+ *
+ * Contraste: rode `python3 tools/contraste.py` depois de mexer em qualquer cor.
+ *   --borda           divisórias decorativas (não delimita controles)
+ *   --borda-controle  limite de campos, botões, abas e trilhas (mínimo 3:1, WCAG 1.4.11)
+ *   --tempo-ativo     tempo em evidência como texto, linha ou marcador sobre o fundo
+ *   --tempo-fundo     bloco sólido de tempo em evidência (texto em --tempo-sobre); --tempo-trilha: trilha de uma barra de tempo
+ *   --selecionado     realce discreto de superfície (nunca o único sinal de seleção)
+ *   --grafico-a/b/c/d séries dos gráficos (tempo atual, referência, melhor marca, outra); as séries também se distinguem por marcador e traço
+ */
+@font-face {
+  font-family: "Sora";
+  src: url("/fontes/sora-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --fonte-display: "Sora", system-ui, sans-serif;
+  /* Identidade fixa da marca (logotipo e ícone): não mudam com tema nem estilo. */
+  --marca-vermelho: #f85149;
+  --marca-grafite: #14181f;
+  --marca-claro: #f2f2f2;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------- */
+/* Estilo "normal": a identidade do Nicska. Claro cinza-azulado e escuro preto-azulado; ações azuis, tempos vermelhos. */
+/* ---------------------------------------------------------------------------------------------------------------- */
+:root {
+  color-scheme: light dark;
+
+  --fundo: #f7f8fa;
+  --superficie: #ffffff;
+  --superficie-alt: #edf0f4;
+  --texto: #14181f;
+  --suave: #526173;
+  --borda: #d8dee7;
+  --borda-controle: #738193;
+  --acento: #c92b31;
+  --acento-botao: #c92b31;
+  --acento-texto: #ffffff;
+  --foco: #c92b31;
+  --tempo-ativo: #c92b31;
+  --tempo-fundo: #c92b31;
+  --tempo-sobre: #ffffff;
+  --tempo-trilha: #d8dee7;
+  --selecionado: #fce9e8;
+  --perigo: #b42318;
+  --sucesso: #1a713a;
+  --aviso: #805500;
+  --info: #155d88;
+  --grafico-a: #c92b31;
+  --grafico-b: #1768b3;
+  --grafico-c: #1a713a;
+  --grafico-d: #7750a5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"], [data-tema="alto-contraste"]) {
+    color-scheme: dark;
+
+    --fundo: #14181f;
+    --superficie: #242a33;
+    --superficie-alt: #303845;
+    --texto: #f2f2f2;
+    --suave: #bac6d5;
+    --borda: #46515e;
+    --borda-controle: #93a1b0;
+    --acento: #ff746d;
+    --acento-botao: #f85149;
+    --acento-texto: #14181f;
+    --foco: #ff746d;
+    --tempo-ativo: #ff746d;
+    --tempo-fundo: #f85149;
+    --tempo-sobre: #14181f;
+    --tempo-trilha: #303845;
+    --selecionado: #38272b;
+    --perigo: #ff928a;
+    --sucesso: #75db98;
+    --aviso: #ffd27a;
+    --info: #94ccff;
+    --grafico-a: #ff746d;
+    --grafico-b: #7bbcff;
+    --grafico-c: #75db98;
+    --grafico-d: #b99bf9;
+  }
+}
+
+:root[data-tema="claro"] {
+  color-scheme: light;
+}
+
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+
+  --fundo: #14181f;
+  --superficie: #242a33;
+  --superficie-alt: #303845;
+  --texto: #f2f2f2;
+  --suave: #bac6d5;
+  --borda: #46515e;
+  --borda-controle: #93a1b0;
+  --acento: #ff746d;
+  --acento-botao: #f85149;
+  --acento-texto: #14181f;
+  --foco: #ff746d;
+  --tempo-ativo: #ff746d;
+  --tempo-fundo: #f85149;
+  --tempo-sobre: #14181f;
+  --tempo-trilha: #303845;
+  --selecionado: #38272b;
+  --perigo: #ff928a;
+  --sucesso: #75db98;
+  --aviso: #ffd27a;
+  --info: #94ccff;
+  --grafico-a: #ff746d;
+  --grafico-b: #7bbcff;
+  --grafico-c: #75db98;
+  --grafico-d: #b99bf9;
+}
+/* ---------------------------------------------------------------------------------------------------------------- */
+/* Estilo "titânio": neutros metálicos (claro quase metálico, escuro grafite); ações em azul-petróleo, tempos vermelhos. */
+/* ---------------------------------------------------------------------------------------------------------------- */
+:root[data-estilo="titanio"] {
+  --fundo: #eeede9;
+  --superficie: #fffefc;
+  --superficie-alt: #e4e3de;
+  --texto: #22252a;
+  --suave: #5a5d61;
+  --borda: #c9c8c2;
+  --borda-controle: #777b80;
+  --acento: #c92b31;
+  --acento-botao: #c92b31;
+  --acento-texto: #ffffff;
+  --foco: #c92b31;
+  --tempo-ativo: #bd2932;
+  --tempo-fundo: #bd2932;
+  --tempo-sobre: #ffffff;
+  --tempo-trilha: #c9c8c2;
+  --selecionado: #f8e7e5;
+  --perigo: #af2523;
+  --sucesso: #236f42;
+  --aviso: #805800;
+  --info: #285e79;
+  --grafico-a: #bd2932;
+  --grafico-b: #315e68;
+  --grafico-c: #236f42;
+  --grafico-d: #73549b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-estilo="titanio"]:not([data-tema="claro"], [data-tema="alto-contraste"]) {
+    color-scheme: dark;
+
+    --fundo: #24262a;
+    --superficie: #34373c;
+    --superficie-alt: #41454a;
+    --texto: #f3f3f1;
+    --suave: #cfd0cf;
+    --borda: #565b63;
+    --borda-controle: #a0a6ad;
+    --acento: #ff746d;
+    --acento-botao: #f85149;
+    --acento-texto: #14181f;
+    --foco: #ff746d;
+    --tempo-ativo: #ff8279;
+    --tempo-fundo: #f85149;
+    --tempo-sobre: #14181f;
+    --tempo-trilha: #303236;
+    --selecionado: #453235;
+    --perigo: #ffa19b;
+    --sucesso: #86dba6;
+    --aviso: #f8d689;
+    --info: #a4d5e9;
+    --grafico-a: #ff8279;
+    --grafico-b: #a5d6df;
+    --grafico-c: #86dba6;
+    --grafico-d: #c3a5f3;
+  }
+}
+
+:root[data-estilo="titanio"][data-tema="claro"] {
+  color-scheme: light;
+}
+
+:root[data-estilo="titanio"][data-tema="escuro"] {
+  color-scheme: dark;
+
+  --fundo: #24262a;
+  --superficie: #34373c;
+  --superficie-alt: #41454a;
+  --texto: #f3f3f1;
+  --suave: #cfd0cf;
+  --borda: #565b63;
+  --borda-controle: #a0a6ad;
+  --acento: #ff746d;
+  --acento-botao: #f85149;
+  --acento-texto: #14181f;
+  --foco: #ff746d;
+  --tempo-ativo: #ff8279;
+  --tempo-fundo: #f85149;
+  --tempo-sobre: #14181f;
+  --tempo-trilha: #303236;
+  --selecionado: #453235;
+  --perigo: #ffa19b;
+  --sucesso: #86dba6;
+  --aviso: #f8d689;
+  --info: #a4d5e9;
+  --grafico-a: #ff8279;
+  --grafico-b: #a5d6df;
+  --grafico-c: #86dba6;
+  --grafico-d: #c3a5f3;
+}
+/* ---------------------------------------------------------------------------------------------------------------- */
+/* Estilo "telemetria": azuis técnicos (claro azul-gelo, escuro azul-marinho profundo); ações azuis, tempos vermelhos. */
+/* ---------------------------------------------------------------------------------------------------------------- */
+:root[data-estilo="telemetria"] {
+  --fundo: #e9eef7;
+  --superficie: #ffffff;
+  --superficie-alt: #dde6f3;
+  --texto: #0b1d3f;
+  --suave: #44577a;
+  --borda: #cbd6e6;
+  --borda-controle: #6b7da0;
+  --acento: #c92b31;
+  --acento-botao: #c92b31;
+  --acento-texto: #ffffff;
+  --foco: #c92b31;
+  --tempo-ativo: #c12b36;
+  --tempo-fundo: #c12b36;
+  --tempo-sobre: #ffffff;
+  --tempo-trilha: #cbd6e6;
+  --selecionado: #f9e6e8;
+  --perigo: #b3261e;
+  --sucesso: #176e3d;
+  --aviso: #7f5500;
+  --info: #174f87;
+  --grafico-a: #c12b36;
+  --grafico-b: #173f7a;
+  --grafico-c: #176e3d;
+  --grafico-d: #66519c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-estilo="telemetria"]:not([data-tema="claro"], [data-tema="alto-contraste"]) {
+    color-scheme: dark;
+
+    --fundo: #071a34;
+    --superficie: #0e2b4e;
+    --superficie-alt: #17385f;
+    --texto: #eef3fb;
+    --suave: #c4d2e9;
+    --borda: #29486c;
+    --borda-controle: #829eca;
+    --acento: #ff746d;
+    --acento-botao: #f85149;
+    --acento-texto: #071a34;
+    --foco: #ff746d;
+    --tempo-ativo: #ff8279;
+    --tempo-fundo: #f85149;
+    --tempo-sobre: #14181f;
+    --tempo-trilha: #17385f;
+    --selecionado: #443044;
+    --perigo: #ffa19b;
+    --sucesso: #80e1a2;
+    --aviso: #ffd587;
+    --info: #9cc5ff;
+    --grafico-a: #ff8279;
+    --grafico-b: #9cc5ff;
+    --grafico-c: #80e1a2;
+    --grafico-d: #c8b0ff;
+  }
+}
+
+:root[data-estilo="telemetria"][data-tema="claro"] {
+  color-scheme: light;
+}
+
+:root[data-estilo="telemetria"][data-tema="escuro"] {
+  color-scheme: dark;
+
+  --fundo: #071a34;
+  --superficie: #0e2b4e;
+  --superficie-alt: #17385f;
+  --texto: #eef3fb;
+  --suave: #c4d2e9;
+  --borda: #29486c;
+  --borda-controle: #829eca;
+  --acento: #ff746d;
+  --acento-botao: #f85149;
+  --acento-texto: #071a34;
+  --foco: #ff746d;
+  --tempo-ativo: #ff8279;
+  --tempo-fundo: #f85149;
+  --tempo-sobre: #14181f;
+  --tempo-trilha: #17385f;
+  --selecionado: #443044;
+  --perigo: #ffa19b;
+  --sucesso: #80e1a2;
+  --aviso: #ffd587;
+  --info: #9cc5ff;
+  --grafico-a: #ff8279;
+  --grafico-b: #9cc5ff;
+  --grafico-c: #80e1a2;
+  --grafico-d: #c8b0ff;
+}
+/* ---------------------------------------------------------------------------------------------------------------- */
+/* Alto contraste (baixa visão): amarelo vivo sobre preto. Ignora o estilo. */
+/* ---------------------------------------------------------------------------------------------------------------- */
+:root[data-tema="alto-contraste"] {
+  color-scheme: dark;
+
+  --fundo: #000000;
+  --superficie: #000000;
+  --superficie-alt: #000000;
+  --texto: #ffff00;
+  --suave: #ffff00;
+  --borda: #666600;
+  --borda-controle: #ffff00;
+  --acento: #ffff00;
+  --acento-botao: #ffff00;
+  --acento-texto: #000000;
+  --foco: #ffffff;
+  --tempo-ativo: #ffff00;
+  --tempo-fundo: #ffff00;
+  --tempo-sobre: #000000;
+  --tempo-trilha: #666600;
+  --selecionado: #333300;
+  --perigo: #ff7777;
+  --sucesso: #66ff66;
+  --aviso: #ffff00;
+  --info: #ffff00;
+  --grafico-a: #ffff00;
+  --grafico-b: #66ffff;
+  --grafico-c: #66ff66;
+  --grafico-d: #ff99ff;
+}

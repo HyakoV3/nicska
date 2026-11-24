@@ -1,0 +1,5 @@
+<resources>
+    <string name="canal_timer">Armed timer</string>
+    <string name="notificacao_armado">Timer armed</string>
+    <string name="notificacao_parar">Stop</string>
+</resources>

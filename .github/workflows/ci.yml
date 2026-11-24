@@ -1,0 +1,98 @@
+name: ci
+
+# Verificações a cada pull request, a cada push na main e sob demanda.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # num PR, um push novo cancela a verificação antiga; na main, cada push termina a sua
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  web:
+    name: App (tipos, testes e verificadores)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Auditoria das dependências de produção (falha em alta ou crítica)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Tipos (svelte-check, inclui tests/)
+        run: npm run check
+      - name: Testes (Vitest)
+        run: npm test
+      - name: Traduções, movimento, contraste e ferramenta de ícone
+        run: |
+          python3 tools/verificar-traducoes.py
+          python3 tools/verificar-movimento.py
+          python3 tools/contraste.py
+          # o gerador de ícone usa o Pillow; num ambiente virtual, porque o Python do sistema recusa `pip install` direto (PEP 668)
+          python3 -m venv "$RUNNER_TEMP/venv-icones"
+          "$RUNNER_TEMP/venv-icones/bin/pip" install --quiet pillow
+          "$RUNNER_TEMP/venv-icones/bin/python" tools/test_gerar_icone_do_app.py
+          "$RUNNER_TEMP/venv-icones/bin/python" tools/test_gerar_icone_do_app_png.py
+
+  rust:
+    name: Rust (src-tauri)
+    # Fixo: o Tauri precisa das bibliotecas do WebKitGTK, e o ubuntu-latest mudou de versão
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Dependências do Tauri no Linux
+        # O apt já travou sem fim nos runners do GitHub: cada tentativa tem limite de tempo e a rede tem retries.
+        run: |
+          opcoes="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          for tentativa in 1 2 3; do
+            if sudo timeout 300 apt-get update $opcoes \
+              && sudo timeout 600 apt-get install -y $opcoes libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev; then
+              exit 0
+            fi
+            echo "apt falhou na tentativa $tentativa; esperando para repetir"
+            sleep 20
+          done
+          exit 1
+      # o Tauri confere se a pasta do front-end existe ao compilar
+      - run: npm ci
+      - run: npm run build
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: src-tauri
+      - name: cargo audit (falha em vulnerabilidade; avisos de manutenção não derrubam)
+        run: |
+          cargo install cargo-audit --locked --version 0.23.0
+          cargo audit --file src-tauri/Cargo.lock
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --lib --manifest-path src-tauri/Cargo.toml
+
+  e2e:
+    name: Timer num Chrome de verdade
+    # Fixo: usa o Chrome que já vem na imagem do Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Teste de ponta a ponta (Chrome mudo, microfone falso)
+        run: npm run test:e2e
