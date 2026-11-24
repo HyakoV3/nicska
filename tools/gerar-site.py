@@ -13,6 +13,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 SITE = RAIZ / "site"
 DOMINIO = "nicska.driit.co"
 REPO = "https://github.com/HyakoV3/nicska"
+SPONSORS = "https://github.com/sponsors/HyakoV3"
 LOJAS = {"play": None, "appstore": None}  # troque None pela URL quando a loja publicar
 
 T = {
@@ -36,6 +37,7 @@ T = {
         "priv": "Sem conta, sem anúncios, sem rastreadores. O app nem pede a permissão de internet: seus tempos, áudios e vídeos ficam no aparelho e só saem quando você compartilha.",
         "priv_link": "Ler a política de privacidade",
         "aviso": "Projeto independente, sem vínculo com a IPSC, a CBTP nem com fabricantes. Não é cronômetro oficial de prova: pela regra 9.10.1 da IPSC, só o timer de um Range Officer vale como tempo oficial. Use para treinar.",
+        "h_apoio": "Apoie o projeto", "apoio": "O Nicska é gratuito e de código aberto. Se ele ajuda no seu treino, você pode apoiar o desenvolvimento pelo GitHub Sponsors. É voluntário e nada muda no app.", "apoio_btn": "Apoiar no GitHub Sponsors",
         "foot": "Licença MIT", "priv_t": "Privacidade", "outros": "English · Español",
     },
     "en": {
@@ -58,6 +60,7 @@ T = {
         "priv": "No account, no ads, no trackers. The app does not even request the internet permission: your times, audio and video stay on your device and leave only when you share them.",
         "priv_link": "Read the privacy policy",
         "aviso": "Independent project, not affiliated with IPSC, CBTP or timer makers. Not an official match timer: under IPSC rule 9.10.1 only a Range Officer's timer gives the official time. Use it to train.",
+        "h_apoio": "Support the project", "apoio": "Nicska is free and open source. If it helps your training, you can support its development through GitHub Sponsors. It is voluntary and nothing changes in the app.", "apoio_btn": "Support on GitHub Sponsors",
         "foot": "MIT license", "priv_t": "Privacy", "outros": "Português · Español",
     },
     "es": {
@@ -80,6 +83,7 @@ T = {
         "priv": "Sin cuenta, sin anuncios, sin rastreadores. La app ni siquiera pide el permiso de internet: tus tiempos, audios y videos se quedan en el dispositivo y solo salen cuando los compartes.",
         "priv_link": "Leer la política de privacidad",
         "aviso": "Proyecto independiente, sin vínculo con la IPSC, la CBTP ni con fabricantes. No es un cronómetro oficial de competencia: según la regla 9.10.1 de la IPSC solo el timer de un Range Officer da el tiempo oficial. Úsalo para entrenar.",
+        "h_apoio": "Apoya el proyecto", "apoio": "Nicska es gratuito y de código abierto. Si te ayuda en tu entrenamiento, puedes apoyar el desarrollo en GitHub Sponsors. Es voluntario y nada cambia en la app.", "apoio_btn": "Apoyar en GitHub Sponsors",
         "foot": "Licencia MIT", "priv_t": "Privacidad", "outros": "Português · English",
     },
 }
@@ -168,9 +172,10 @@ def pagina(idioma):
 </div>
 <section aria-labelledby="rec"><h2 id="rec">{t['h_rec']}</h2><div class="grade">{recs}</div></section>
 <section aria-labelledby="priv"><h2 id="priv">{t['h_priv']}</h2><p>{html.escape(t['priv'])} <a href="/privacidade/">{t['priv_link']}</a>.</p></section>
+<section aria-labelledby="apoio"><h2 id="apoio">{t['h_apoio']}</h2><p>{html.escape(t['apoio'])}</p><p><a class="btn" href="{SPONSORS}" rel="noopener">{t['apoio_btn']}</a></p></section>
 <section><p class="aviso">{html.escape(t['aviso'])}</p></section>
 </main>
-<footer><span>© Nicska · {t['foot']}</span><span><a href="/privacidade/">{t['priv_t']}</a> · <a href="{REPO}">GitHub</a></span></footer>
+<footer><span>© Nicska · {t['foot']}</span><span><a href="/privacidade/">{t['priv_t']}</a> · <a href="{REPO}">GitHub</a> · <a href="{SPONSORS}" rel="noopener">Sponsors</a></span></footer>
 </div>
 </body>
 </html>

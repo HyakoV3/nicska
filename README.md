@@ -12,6 +12,8 @@ futuro, alimenta um site com ranking. Feito com **Rust + Tauri 2** e interface e
 >
 > IPSC e outras marcas citadas pertencem aos seus donos. O Nicska é um projeto independente, **não homologado nem afiliado** à IPSC, à CBTP nem a fabricantes. Também **não é cronômetro oficial de prova**: pela regra 9.10.1 da IPSC, só o timer operado por um Range Officer vale como tempo oficial. Use o app para treinar.
 
+> **Apoie:** o Nicska é gratuito e de código aberto. Se ele ajuda no seu treino, você pode apoiar pelo [GitHub Sponsors](https://github.com/sponsors/HyakoV3) (o app em si não pede dinheiro nem tem links de doação).
+
 ## Baixar e instalar
 
 Os APKs assinados saem em [**Releases**](../../releases) (arquivo `nicska-X.Y.Z.apk`, com `SHA256SUMS`). No Android: baixe o APK, permita a instalação de fontes desconhecidas para o navegador/gerenciador que o abriu e instale. Confira o SHA-256 se quiser. Android 7.0 (API 24) ou mais novo; hoje só arm64.
