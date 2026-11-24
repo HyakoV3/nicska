@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { soltarOrientacao, travarOrientacao } from "../src/lib/orientacao";
 
-// A orientação travada durante a gravação do vídeo (C8): o wrapper com a ponte falsa e, como em doacao.test.ts, a estrutura do lado Kotlin (que não compila aqui).
+// A orientação travada durante a gravação do vídeo (C8): o wrapper com a ponte falsa e, a estrutura do lado Kotlin (que não compila aqui).
 const PASTA = "src-tauri/gen/android/app/src/main/java/io/github/hyakov3/nicska";
 
 afterEach(() => {

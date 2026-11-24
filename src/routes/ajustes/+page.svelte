@@ -4,7 +4,6 @@
   import Aviso from "$lib/Aviso.svelte";
   import Cartao from "$lib/Cartao.svelte";
   import Dados from "$lib/Dados.svelte";
-  import Doacao from "$lib/Doacao.svelte";
   import MeuPerfil from "$lib/MeuPerfil.svelte";
   import OverlayDeVideo from "$lib/OverlayDeVideo.svelte";
   import QualidadeDoVideo from "$lib/QualidadeDoVideo.svelte";
@@ -180,7 +179,6 @@
   </section>
 
   <!-- "Apoie o desenvolvedor": fora de card, logo acima da versão. -->
-  <Doacao />
 
   <!-- A versão fica sozinha no fim, centralizada, fora do card. -->
   <p class="meta versao">{t("ajustes.versao", { v: `${__APP_VERSAO__} (${__APP_COMMIT__})` })}</p>

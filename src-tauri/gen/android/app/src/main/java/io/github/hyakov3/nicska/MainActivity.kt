@@ -35,8 +35,6 @@ class MainActivity : TauriActivity() {
     webView.addJavascriptInterface(outra, "NkCompartilhar")
     // A ponte do tema: `window.NkTema`, põe os ícones das barras do sistema em sintonia com o tema do app (claro ou escuro).
     webView.addJavascriptInterface(PonteTema(this), "NkTema")
-    // A ponte da doação: `window.NkDoacao`, abre a página de doação no navegador do sistema (o app não tem INTERNET). A URL é fixa no código nativo.
-    webView.addJavascriptInterface(PonteDoacao(this), "NkDoacao")
     // A ponte da orientação: `window.NkOrientacao`, trava o giro da tela enquanto o vídeo da tentativa grava (C8) e o solta no fim.
     webView.addJavascriptInterface(PonteOrientacao(this), "NkOrientacao")
     // A ponte da tela: `window.NkTela`, esconde as barras do sistema (modo imersivo) enquanto a câmera ocupa a tela inteira no modo vídeo (V2b).

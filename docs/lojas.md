@@ -20,7 +20,7 @@ O que o GitHub já faz e o que falta para publicar. Decisões marcadas **[manten
 
 O Tauri 2 compila para iOS (`npm run tauri ios init` gera o projeto Xcode; hoje só há ícones em `src-tauri/icons/ios`). Falta, nesta ordem:
 1. **[mantenedor]** Apple Developer Program (US$ 99 por ano) e um identificador (Bundle ID; pode ser o mesmo do Android).
-2. Rodar `tauri ios init` num Mac (ou no runner `macos-latest`) e versionar `src-tauri/gen/apple`. **Adaptar o que é Android**: as pontes Kotlin (`NkTema`, `NkTela`, `NkOrientacao`, `NkServico`, `NkDoacao`, compartilhar) precisam de equivalentes em Swift (ou o app cai nos recursos Web: Web Share, `screen.orientation`, `navigator.vibrate` **não existe no Safari/WKWebView**, o que muda as batidas e a vibração 3/2/1).
+2. Rodar `tauri ios init` num Mac (ou no runner `macos-latest`) e versionar `src-tauri/gen/apple`. **Adaptar o que é Android**: as pontes Kotlin (`NkTema`, `NkTela`, `NkOrientacao`, `NkServico`, compartilhar) precisam de equivalentes em Swift (ou o app cai nos recursos Web: Web Share, `screen.orientation`, `navigator.vibrate` **não existe no Safari/WKWebView**, o que muda as batidas e a vibração 3/2/1).
 3. Conferir no WKWebView: `getUserMedia` com microfone cru, `MediaRecorder` (iOS grava MP4/AAC, não WebM/Opus: o remux Ogg e o leitor WebM não se aplicam), `AudioWorklet`, `devicemotion` (exige permissão explícita no iOS), WebCodecs (iOS 16.4+).
 4. Workflow `release-ios.yml` em `macos-latest` (assinatura via certificado e perfil de provisionamento em segredos, ou `fastlane match`), envio ao **TestFlight** pela API App Store Connect.
 5. Revisão da Apple: política de privacidade, descrição das permissões de câmera/microfone/movimento, classificação etária.

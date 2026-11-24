@@ -8,8 +8,6 @@ futuro, alimenta um site com ranking. Feito com **Rust + Tauri 2** e interface e
 
 **Pronúncia:** "Nísca" (não há "tch" no meio).
 
-> **Apoie:** o Nicska é gratuito. Se ele ajuda no seu treino, há um botão de doação voluntária em Ajustes (abre o PayPal no navegador; o app continua sem internet).
-
 > **Aviso:** projeto **não oficial**, sem vínculo com a IPSC, a CBTP nem com fabricantes de shot timers.
 >
 > IPSC e outras marcas citadas pertencem aos seus donos. O Nicska é um projeto independente, **não homologado nem afiliado** à IPSC, à CBTP nem a fabricantes. Também **não é cronômetro oficial de prova**: pela regra 9.10.1 da IPSC, só o timer operado por um Range Officer vale como tempo oficial. Use o app para treinar.

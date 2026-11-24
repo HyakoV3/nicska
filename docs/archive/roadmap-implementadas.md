@@ -46,7 +46,7 @@ Feito depois da auditoria, fora das fases do plano (APK 030 a 046; zips em `apk-
 | Vídeo V1a a V1c | feito | base (IndexedDB v4, `videos`/`videos_pedacos`), captura com dois `MediaRecorder` (áudio intocado para o detector), prévia, Revisão com vídeo e pulo ao disparo |
 | Vídeo V2 e V2b | feito | overlay ao vivo e na reprodução (`--u`, retrato e paisagem); tela cheia ao gravar, botão Sair segurando ~1 s; opções em Ajustes (Registro, Qualidade, Retenção, Overlay) |
 | Vídeo V3 | feito | exportar "Com os tempos" (WebCodecs + `mp4-muxer`, com recuo para tempo real), erro específico na falha, pílula Vídeo/Áudio/lixeira, marca "Nicska" desligável |
-| Interface | feito | Cronômetro (antes Timer), percurso em pílula com sugestões só do digitado, resultado em cartões, sliders gordinhos, doação com texto curto |
+| Interface | feito | Cronômetro (antes Timer), percurso em pílula com sugestões só do digitado, resultado em cartões, sliders gordinhos, doação com texto curto (removida em 2026-11-24) |
 | Ícones | feito | ícone fase 2 do app; fase 3 na marca do overlay |
 | Calibrar removida | feito | aba, `Gravador`, `ItemGravacao`, `gravador.ts`, `gravacoes.ts`, testes e 37 chaves de i18n; áudio cru da Etapa 1 vem do Cronômetro |
 | i18n | feito | 9 chaves sem uso apagadas, depois as da Calibrar; 492 por idioma, as usadas conferidas nos 3 |

@@ -20,7 +20,7 @@ O Nicska é um aplicativo gratuito e de código aberto (MIT) de cronômetro de t
 - **Vibração** (`VIBRATE`) e **sensor de movimento** (sem permissão): avisos por vibração e o recurso opcional de iniciar batendo no celular.
 
 ## Quando algo sai do aparelho
-Somente quando **você** toca em compartilhar/exportar (áudio, vídeo, JSON de backup ou legenda) e escolhe o aplicativo de destino na folha do sistema; a partir daí valem as regras desse aplicativo. O botão **Doar com PayPal** abre a página de doação no navegador do sistema; o Nicska não recebe nem guarda nada sobre a doação.
+Somente quando **você** toca em compartilhar/exportar (áudio, vídeo, JSON de backup ou legenda) e escolhe o aplicativo de destino na folha do sistema; a partir daí valem as regras desse aplicativo.
 
 ## Atenção ao filmar e gravar
 Ao gravar áudio ou vídeo no estande, outras pessoas podem aparecer ou ser ouvidas. Avise quem estiver por perto e respeite as regras do clube e a legislação local sobre imagem e voz.
