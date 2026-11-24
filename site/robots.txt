@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://nicska.driit.co/sitemap.xml

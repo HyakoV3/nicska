@@ -26,6 +26,7 @@ COR = RAIZ / "design" / "icone" / "nicska-simbolo.png"
 FUNDO = (0x14, 0x18, 0x1F, 255)
 RES = RAIZ / "src-tauri" / "gen" / "android" / "app" / "src" / "main" / "res"
 ZONA_SEGURA = 66 / 108  # diâmetro do círculo seguro do ícone adaptativo, em fração da tela
+OCUPACAO_ADAPTATIVA = 0.58  # altura do símbolo na tela de 108 dp do ícone adaptativo (zona segura = 61%; 58% deixa margem para qualquer máscara)
 OCUPACAO_PADRAO = 0.86  # o símbolo ocupa 86% do ícone padrão (sobra uma margem)
 XML_ADAPTATIVO = (
     '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
@@ -67,7 +68,12 @@ def gerar_monocromaticos(cor: Image.Image) -> None:
     """`cor` é o recorte quadrado do símbolo; a silhueta usa o MESMO recorte, então fica alinhada ao primeiro plano em cores."""
     mono = silhueta_mono(cor)
     for dens, leg in TAMANHOS.items():
-        simbolo_em(round(leg * 108 / 48), ZONA_SEGURA, mono).save(RES / f"mipmap-{dens}" / "ic_launcher_monochrome.png")
+        simbolo_em(round(leg * 108 / 48), OCUPACAO_ADAPTATIVA, mono).save(RES / f"mipmap-{dens}" / "ic_launcher_monochrome.png")
+
+
+def gerar_primeiros_planos(cor: Image.Image) -> None:
+    for dens, leg in TAMANHOS.items():
+        simbolo_em(round(leg * 108 / 48), OCUPACAO_ADAPTATIVA, cor).save(RES / f"mipmap-{dens}" / "ic_launcher_foreground.png")
 
 
 def escrever_xml_adaptativo() -> None:
@@ -90,10 +96,11 @@ def sobre_fundo(frente: Image.Image, forma: str = "quadrado") -> Image.Image:
 
 def main() -> None:
     cor = recorte(Image.open(COR).convert("RGBA"))
-    if "--so-monocromatico" in sys.argv:
+    if "--so-adaptativo" in sys.argv or "--so-monocromatico" in sys.argv:
+        gerar_primeiros_planos(cor)
         gerar_monocromaticos(cor)
         escrever_xml_adaptativo()
-        print("Gerados: ic_launcher_monochrome.png (5 densidades) e mipmap-anydpi-v26/ic_launcher.xml.")
+        print("Gerados: ic_launcher_foreground.png e ic_launcher_monochrome.png (5 densidades) e mipmap-anydpi-v26/ic_launcher.xml.")
         return
 
     # Favicon (o logo do cabeçalho): quadrado cheio; o CSS arredonda os cantos.
@@ -110,7 +117,7 @@ def main() -> None:
         adapt = round(leg * 108 / 48)
         sobre_fundo(simbolo_em(leg, OCUPACAO_PADRAO, cor), "arredondado").save(pasta / "ic_launcher.png")
         sobre_fundo(simbolo_em(leg, 0.74, cor), "redondo").save(pasta / "ic_launcher_round.png")
-        simbolo_em(adapt, ZONA_SEGURA, cor).save(pasta / "ic_launcher_foreground.png")
+        simbolo_em(adapt, OCUPACAO_ADAPTATIVA, cor).save(pasta / "ic_launcher_foreground.png")
     gerar_monocromaticos(cor)
     escrever_xml_adaptativo()
     (RES / "values" / "ic_launcher_background.xml").write_text(
