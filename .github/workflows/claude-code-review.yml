@@ -39,7 +39,6 @@ jobs:
           plugins: "code-review@claude-code-plugins"
           prompt: ${{ env.PROMPT_REVIEW }}
           claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment"'
-          show_full_output: true
       # Deixa um aviso visível no resumo da execução quando o token enterprise falhou.
       - name: Aviso do fallback de token
         if: steps.claude_enterprise.outcome == 'failure'
@@ -58,4 +57,3 @@ jobs:
           plugins: "code-review@claude-code-plugins"
           prompt: ${{ env.PROMPT_REVIEW }}
           claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment"'
-          show_full_output: true
