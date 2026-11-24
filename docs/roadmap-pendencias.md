@@ -78,3 +78,4 @@ Tudo o que é ideia (fala, V4, restos do vídeo, editar tentativa, nota S/A/B/C/
 
 - [ ] Barra fixa: conferir no aparelho com teclado aberto e em tablet.
 - [x] Feitos em 2026-11-24 (falta só validar no aparelho): taxa do `devicemotion` no diagnóstico, vídeos órfãos limpos ao abrir, retenção que não apaga o recém-salvo (mínimo 1 GB, padrão 2 GB), tela cheia da reprodução com overlay, acordeão exclusivo, trilha dos sliders, aliasing do `tanh` medido (-59 dB sem oversample, < -118 dB com 2x: sem problema), vibração 3/2/1, 4K (avançado, 30 fps, 18 Mbps, recua para 1080p), trocar percurso e exportar legenda `.srt` no Histórico.
+
