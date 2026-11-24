@@ -109,7 +109,7 @@
   };
 </script>
 
-<dialog bind:this={caixa} class="tela-cheia" aria-label={t("tela_video.aria")} oncancel={cancelarEvento} onclose={aoFechar}>
+<dialog bind:this={caixa} class="tela-cheia" aria-label={t("tela_video.aria")} oncancel={cancelarEvento} onclose={aoFechar} oncontextmenu={(e) => e.preventDefault()}>
   <Previa {camera} ocupado={!enquadrar} bind:fluxo />
   <p class="so-leitor" role="status">{anuncio}</p>
 
@@ -139,6 +139,11 @@
   .tela-cheia {
     position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
     background: black; color: white; overflow: hidden; box-sizing: border-box;
+    touch-action: none; /* sem zoom de pinça nem rolagem: o enquadramento e o overlay não mudam de escala durante a tentativa */
+  }
+  /* Nada aqui é para selecionar: o dedo segurando o botão (ou o vídeo) não pode abrir a seleção azul, o menu de toque longo nem o realce de toque do Android. */
+  .tela-cheia, .tela-cheia :global(*) {
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
   }
   .tela-cheia::backdrop { background: black; }
   /* O botão no fundo, no centro (onde se espera o de parar de uma câmera); a faixa de baixo do overlay sobe acima dele (`reservaBaixo`), e a dica fica logo acima do botão. */

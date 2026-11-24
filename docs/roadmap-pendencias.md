@@ -62,7 +62,7 @@ O que fazer e em que ordem (fases, trilhas, responsáveis): [`plano-de-acao.md`]
 - [x] **P2 UX-18:** textos fixos em português na interface em inglês/espanhol: corrigido no código (o nome padrão vem de `atirador.padrao` no dicionário; a sugestão "Saque" tem a chave `drill.saque` traduzida nos três idiomas). Falta só rever no aparelho. Histórico em [`archive/roadmap-ux-ui.md`](archive/roadmap-ux-ui.md).
 - [ ] **P3 UX-16:** grade de indicadores do Resultado (o 5º fica sozinho na última linha).
 - [ ] Capturas que nunca foram feitas: Timer em uso, "STAND BY" grande, Opções do timer aberto, estados vazios e de erro.
-- [ ] Testes do perfil não feitos: zoom 400%, teclado, leitor de tela, tamanho real dos alvos de toque, contraste por componente (só os pares de cores foram medidos).
+- [ ] Testes do perfil não feitos: zoom 400% (**não se aplica à pinça**: ver a decisão abaixo; vale o tamanho de fonte do sistema), teclado, leitor de tela, tamanho real dos alvos de toque, contraste por componente (só os pares de cores foram medidos).
 - [x] Mensagens: Apagar de tentativa e Descartar pedem confirmação, e o 2º toque se desarma sozinho em 4 s (CONS-008 e CONS-052, feitos).
 
 - [ ] **Adaptar o kit de auditoria** (kit de perfis de auditoria, arquivo local): trocar os perfis musicais (06 a 11, 13) por perfis do Nicska (detecção de disparos, áudio do microfone, ranking, JSON) e rodar a primeira rodada.
@@ -78,3 +78,9 @@ Tudo o que é ideia (fala, V4, restos do vídeo, editar tentativa, nota S/A/B/C/
 
 - [ ] Barra fixa: conferir no aparelho com teclado aberto e em tablet.
 - [x] Feitos em 2026-11-24 (falta só validar no aparelho): taxa do `devicemotion` no diagnóstico, vídeos órfãos limpos ao abrir, retenção que não apaga o recém-salvo (mínimo 1 GB, padrão 2 GB), tela cheia da reprodução com overlay, acordeão exclusivo, trilha dos sliders, aliasing do `tanh` medido (-59 dB sem oversample, < -118 dB com 2x: sem problema), vibração 3/2/1, 4K (avançado, 30 fps, 18 Mbps, recua para 1080p), trocar percurso e exportar legenda `.srt` no Histórico.
+
+## 9. Decisões do mantenedor (registro)
+
+- **2026-11-24: zoom de pinça desabilitado em todo o app, a pedido do mantenedor** (`maximum-scale=1, user-scalable=no` em `src/app.html` e `touch-action: pan-x pan-y` no `html`; na tela cheia da gravação, `touch-action: none`). Motivo: a pinça mudava a escala da câmera e do overlay e atrapalhava os toques durante a tentativa. **Ressalva registrada:** isso contraria a WCAG 1.4.4 (redimensionar texto); fica mitigado porque o app segue o tamanho de fonte do sistema Android e usa `rem`. Se uma revisão de acessibilidade ou a Play Store questionar, a decisão foi do mantenedor, não uma omissão; reverter é voltar o viewport e tirar o `touch-action`.
+- **2026-11-24: seleção azul e realce de toque desligados na tela cheia da gravação** (e o realce de toque em todo o app), também a pedido do mantenedor.
+

@@ -73,6 +73,7 @@
     display: grid; justify-items: center; align-content: center; gap: 0.25rem; min-height: 4rem; padding: 0.4rem 1rem; box-sizing: border-box;
     border-radius: 1rem; border: 0.1875rem solid white; background: rgb(0 0 0 / 0.55); color: white; font-size: 1.3rem; font-weight: 700;
     cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
   }
   .segurar.correndo { border-color: var(--perigo); }
   .segurar:focus-visible { outline: 0.25rem solid var(--foco); outline-offset: 0.2rem; }

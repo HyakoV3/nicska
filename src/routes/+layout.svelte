@@ -31,6 +31,8 @@
 {@render children()}
 
 <style>
+    /* Sem zoom de pinça em todo o app (decisão do mantenedor, 2026-11-24, ver docs/roadmap-pendencias.md). A rolagem continua; o tamanho da fonte do sistema também. */
+  :global(html) { touch-action: pan-x pan-y; -webkit-tap-highlight-color: transparent; }
   :global(:root) {
     font-family: system-ui, sans-serif;
     color: var(--texto);
