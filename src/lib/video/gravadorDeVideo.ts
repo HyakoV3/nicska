@@ -50,6 +50,14 @@ export class GravadorDeVideo {
     return this.gravacao !== null;
   }
 
+  /** Quem quer saber quando chega cada pedaço (o medidor de desempenho, video/desempenho.ts): só observa, não muda nada; uma falha do ouvinte é ignorada. */
+  private readonly ouvintesDePedaco = new Set<() => void>();
+  /** Assina o aviso de pedaço chegado; devolve como cancelar. */
+  ouvirPedacos(ouvinte: () => void): () => void {
+    this.ouvintesDePedaco.add(ouvinte);
+    return () => void this.ouvintesDePedaco.delete(ouvinte);
+  }
+
   /** Abre a câmera e começa a gravar. Devolve nulo se gravando, ou o motivo de seguir só com áudio (nunca lança). Descarta um vídeo anterior não salvo. */
   async iniciar(p: PedidoDeVideo): Promise<MotivoSemVideo | null> {
     void this.cancelar();
@@ -86,7 +94,10 @@ export class GravadorDeVideo {
     const g: Gravacao = { id: p.id, gravador, camera, n: 0 };
     this.gravacao = g;
     this.pendente = p.id;
-    gravador.ondataavailable = (e) => this.guardar(g, e.data);
+    gravador.ondataavailable = (e) => {
+      this.avisarPedaco();
+      this.guardar(g, e.data);
+    };
     // A câmera que cai no meio (outro app a tomou, erro do gravador) para só o vídeo; o áudio e a tentativa seguem (C8).
     gravador.onerror = () => this.interromperSe(g);
     camera.fluxo.getVideoTracks().forEach((t) => t.addEventListener("ended", () => this.interromperSe(g)));
@@ -95,6 +106,16 @@ export class GravadorDeVideo {
     const atraso = deslocamentoDoVideoMs(p.inicioDoAudioMs, (this.fabricas.agora ?? agoraDoNavegador)());
     void this.enfileirar(() => this.loja.iniciarVideo(p.id, gravador.mimeType || tipo, atraso)).catch(() => this.interromperSe(g));
     return null;
+  }
+
+  private avisarPedaco(): void {
+    for (const o of this.ouvintesDePedaco) {
+      try {
+        o();
+      } catch {
+        // um medidor com defeito não pode atrapalhar a gravação
+      }
+    }
   }
 
   /** Um pedaço chegou: vai à fila com o próximo número. Se a escrita falhar (espaço cheio), o vídeo para como parcial. */

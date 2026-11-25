@@ -175,7 +175,7 @@
   </BarraFixa>
 {/if}
 {#if tela !== "fechada"}
-  <TelaCheia fase={tela} {snap} {anuncio} {percursoId} bind:fluxo={fluxoDaPrevia} agoraDaEscutaS={() => escuta?.contexto?.currentTime ?? null}
+  <TelaCheia fase={tela} {snap} {anuncio} {percursoId} bind:fluxo={fluxoDaPrevia} gravador={() => video} agoraDaEscutaS={() => escuta?.contexto?.currentTime ?? null}
     aoComecar={comecar} aoSair={() => (tela = sairDaTelaCheia(tela))} aoCancelar={() => timer?.cancelar()} aoParar={() => void timer?.parar()} />
 {/if}
 {#snippet seletorDePercurso()}

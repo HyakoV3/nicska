@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { zeroNoVideoS } from "../src/lib/video/alinhamento";
-import { CLARAO_MS, DESTAQUE_MS, SPLITS_VISIVEIS, dataDoCabecalho, estadoDoOverlay, opacidadeDoSplit, type DadosDoOverlay } from "../src/lib/video/overlay";
+import { CLARAO_MS, DESTAQUE_MS, SPLITS_VISIVEIS, dataDoCabecalho, estadoDoOverlay, opacidadeDoSplit, todosOsSplits, ultimosSplits, type DadosDoOverlay } from "../src/lib/video/overlay";
 import { edicaoDe, apagarDisparo, inserirDisparo } from "../src/lib/revisao";
 
 // O overlay da reprodução: o que aparece em cada instante do vídeo, a partir do apito já levado ao vídeo e dos disparos atuais da Revisão.
@@ -107,5 +107,47 @@ describe("esmaecer os splits mais antigos", () => {
     expect(Math.min(...ops)).toBeGreaterThan(0);
     expect(opacidadeDoSplit(50)).toBe(0.2);
     expect(opacidadeDoSplit(-3)).toBe(1);
+  });
+});
+
+describe("memo dos splits", () => {
+  it("a mesma lista de disparos devolve o MESMO array de splits", () => {
+    const d = [1000, 1400, 2000];
+    expect(todosOsSplits(d)).toBe(todosOsSplits(d));
+    expect(todosOsSplits(d).map((s) => s.splitMs)).toEqual([1000, 400, 600]);
+  });
+  it("lista nova, mais um disparo ou edição no lugar refazem", () => {
+    const d = [1000, 1400];
+    const a = todosOsSplits(d);
+    expect(todosOsSplits([1000, 1400])).not.toBe(a);
+    d.push(2000);
+    const b = todosOsSplits(d);
+    expect(b).not.toBe(a);
+    expect(b).toHaveLength(3);
+    d[1] = 1500; // edição no lugar, mesmo tamanho e mesmo último
+    expect(todosOsSplits(d).map((s) => s.splitMs)).toEqual([1000, 500, 500]);
+  });
+  it("o estado ao vivo reaproveita os splits entre quadros (só o cronômetro muda)", () => {
+    const d = dados({ aoVivo: true, disparosMs: [1500, 1800] });
+    const a = estadoDoOverlay(3.5, d);
+    const b = estadoDoOverlay(3.52, d);
+    expect(b.splits).toBe(a.splits);
+    expect(b.decorridoMs).toBeGreaterThan(a.decorridoMs);
+  });
+  it("antes do apito é sempre o mesmo objeto, sem alocar", () => {
+    expect(estadoDoOverlay(-1, dados())).toBe(estadoDoOverlay(-1, dados()));
+  });
+  it("na reprodução, a fatia só se refaz quando entra um disparo", () => {
+    const d = dados({ disparosMs: [1500, 1800, 2400] });
+    const a = estadoDoOverlay(3.9, d); // dois disparos já ocorridos
+    expect(estadoDoOverlay(3.95, d).splits).toBe(a.splits);
+    expect(estadoDoOverlay(3.95, d).splits).toHaveLength(2);
+  });
+  it("ultimosSplits: a mesma entrada, a mesma saída, e só os últimos", () => {
+    const todos = todosOsSplits([100, 200, 300, 400, 500, 600, 700]);
+    const u = ultimosSplits(todos);
+    expect(u.map((s) => s.n)).toEqual([3, 4, 5, 6, 7]);
+    expect(ultimosSplits(todos)).toBe(u);
+    expect(ultimosSplits(todos.slice(0, 3))).toHaveLength(3);
   });
 });

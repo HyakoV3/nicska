@@ -1,5 +1,6 @@
 // O que se tira dos instantes dos disparos (ms desde o apito): 1º disparo, splits, total e hit factor. Só os instantes são guardados; o resto é derivado
 // (docs/FORMATO.md). Funções puras.
+import { numeroComCasas } from "./formatarNumero";
 
 export type Resumo = {
   /** Quantos disparos. */
@@ -55,5 +56,5 @@ export function hitFactor(pontos: number, totalMs: number | null): number | null
 /** "1,48" (segundos com duas casas, separador do idioma). Valor inválido ou negativo vale "0,00". */
 export function formatarSegundos(ms: number, idioma: string): string {
   const v = Number.isFinite(ms) && ms > 0 ? ms / 1000 : 0;
-  return new Intl.NumberFormat(idioma, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+  return numeroComCasas(v, 2, idioma);
 }

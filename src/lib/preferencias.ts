@@ -1,6 +1,7 @@
 // Preferências guardadas no aparelho (localStorage). Tudo é validado ao ler (`ler`, nunca `JSON.parse` solto) e qualquer falha de armazenamento é
 // ignorada: o app segue com o padrão. Os valores padrão do detector são HIPÓTESES até a Etapa 1 (docs/calibracao.md) trazer números medidos.
 import { MAXIMO_DE_NOMES, type NomeLembrado } from "./nomesDePercurso";
+import { acrescentarRelatorio, relatoriosDoTexto, type RelatorioDeDesempenho } from "./video/desempenho";
 import { normalizarQualidade, qualidadePadrao, type Qualidade } from "./video/formato";
 import { ESPACO_DE_VIDEO, PRAZOS_DE_VIDEO, limitesDeVideoPadrao, type LimitesDeVideo } from "./video/politica";
 
@@ -234,4 +235,56 @@ export function lerAvisoEnquadrarVisto(): boolean {
 
 export function salvarAvisoEnquadrarVisto() {
   guardar(CHAVE_AVISO_ENQUADRAR, { visto: true });
+}
+
+/**
+ * O laboratório de desempenho (Ajustes → Laboratório): chaves só para DIAGNÓSTICO da gravação ao vivo na tela cheia, para achar o que trava no aparelho.
+ * `overlayAoVivo` (padrão ligado): desligado, a tela cheia mostra só a câmera e o botão (nenhum overlay); `taxaHz` (60, 30 ou 10; padrão 30): quantas vezes
+ * por segundo o cronômetro do overlay se atualiza; `medirDesempenho` (padrão ligado): grava um relatório de cada gravação (video/desempenho.ts);
+ * `gravarVideo` (padrão sim): não = a câmera e a prévia abrem, mas o vídeo não é gravado (isola o custo da codificação; o áudio e o detector seguem).
+ * Qualquer valor inválido guardado vale o padrão.
+ */
+export const TAXAS_DO_CRONOMETRO = [60, 30, 10] as const;
+export type TaxaDoCronometro = (typeof TAXAS_DO_CRONOMETRO)[number];
+export type PrefsLaboratorio = { overlayAoVivo: boolean; taxaHz: TaxaDoCronometro; medirDesempenho: boolean; gravarVideo: boolean };
+
+const CHAVE_LABORATORIO = "prefs.laboratorio";
+
+export const laboratorioPadrao = (): PrefsLaboratorio => ({ overlayAoVivo: true, taxaHz: 30, medirDesempenho: true, gravarVideo: true });
+
+export function lerLaboratorio(): PrefsLaboratorio {
+  const p = laboratorioPadrao();
+  const o = lerObjeto(CHAVE_LABORATORIO);
+  if (o) {
+    for (const k of ["overlayAoVivo", "medirDesempenho", "gravarVideo"] as const) if (typeof o[k] === "boolean") p[k] = o[k];
+    const hz = (TAXAS_DO_CRONOMETRO as readonly unknown[]).find((x) => x === o.taxaHz);
+    if (hz !== undefined) p.taxaHz = hz as TaxaDoCronometro;
+  }
+  return p;
+}
+
+export function salvarLaboratorio(p: PrefsLaboratorio) {
+  guardar(CHAVE_LABORATORIO, p);
+}
+
+/** Os relatórios de desempenho das últimas gravações (`diag.desempenho`), do mais novo ao mais velho; lidos com tolerância (o que não presta é descartado). */
+const CHAVE_DESEMPENHO = "diag.desempenho";
+
+export function lerRelatoriosDeDesempenho(): RelatorioDeDesempenho[] {
+  try {
+    return relatoriosDoTexto(localStorage.getItem(CHAVE_DESEMPENHO));
+  } catch {
+    return [];
+  }
+}
+
+/** Põe o relatório no topo da lista guardada (no máximo 10 e um limite de tamanho: os mais velhos saem). Devolve a lista nova. */
+export function guardarRelatorioDeDesempenho(r: RelatorioDeDesempenho): RelatorioDeDesempenho[] {
+  const lista = acrescentarRelatorio(lerRelatoriosDeDesempenho(), r);
+  guardar(CHAVE_DESEMPENHO, lista);
+  return lista;
+}
+
+export function apagarRelatoriosDeDesempenho() {
+  guardar(CHAVE_DESEMPENHO, []);
 }
