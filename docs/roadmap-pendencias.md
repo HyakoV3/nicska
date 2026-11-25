@@ -86,6 +86,14 @@ Tudo o que é ideia (fala, V4, restos do vídeo, editar tentativa, nota S/A/B/C/
 - **Outro suspeito (já existia):** o laço `requestAnimationFrame` do cronômetro ao vivo redesenhava o overlay a cada quadro; no 0.1.5 foi limitado (centésimo muda, 30 Hz) e o `Intl.NumberFormat` ganhou cache.
 - **Como testar:** o 0.1.5 traz o Laboratório (overlay ao vivo, taxa 60/30/10 Hz, gravar vídeo sim/não) e o Diagnóstico de desempenho (Ajustes → compartilhar relatório). Próximo passo combinado: um interruptor "Bloqueios de toque (pinça e seleção)" no Laboratório, para comparar com e sem os três itens acima no mesmo APK.
 
+## 8c. Alerta do Dependabot: `glib` (GHSA-wrw7-89jp-8q8g), aguardando o Tauri (2026-11-25)
+
+- **O que é:** Dependabot #6, severidade média. `glib` 0.18.5, vindo de `tauri 2.12.7 → gtk 0.18`. Só entra no build de **desktop Linux**; o APK não o contém (`cargo tree --target aarch64-linux-android -i glib` não encontra nada).
+- **Por que não atualizamos:** o `gtk` 0.18 exige `glib ^0.18`; `cargo update -p glib --precise 0.20.0` falha. O `tauri-runtime-wry` 2.12.5 (o último) exige `tao 0.37` e `wry 0.57`, enquanto `tao` 0.38 e `wry` 0.58 (24 e 25/11) já usam `glib` 0.22.
+- **Estado no Tauri:** o PR tauri-apps/tauri#16170 (gtk 0.19) foi mesclado no `dev` em 25/11; falta o release (pacote de versões #16570, 2.13.0). Não comentar nas issues deles (os mantenedores pediram para não acumular).
+- **Decisão do mantenedor (2026-11-25):** deixar o alerta ABERTO até o release do Tauri. Quando o Dependabot abrir o PR, rodar o CI e o release de teste antes de mesclar (é uma versão menor com recursos novos).
+- **Se demorar:** passando uma ou duas semanas sem release, dispensar o alerta como "código vulnerável não é usado" (com este texto como justificativa). Nada de `[patch.crates-io]` apontando para o `dev`: muda o Tauri que compila o APK.
+
 ## 9. Decisões do mantenedor (registro)
 
 - **2026-11-24: zoom de pinça desabilitado em todo o app, a pedido do mantenedor** (`maximum-scale=1, user-scalable=no` em `src/app.html` e `touch-action: pan-x pan-y` no `html`; na tela cheia da gravação, `touch-action: none`). Motivo: a pinça mudava a escala da câmera e do overlay e atrapalhava os toques durante a tentativa. **Ressalva registrada:** isso contraria a WCAG 1.4.4 (redimensionar texto); fica mitigado porque o app segue o tamanho de fonte do sistema Android e usa `rem`. Se uma revisão de acessibilidade ou a Play Store questionar, a decisão foi do mantenedor, não uma omissão; reverter é voltar o viewport e tirar o `touch-action`.
