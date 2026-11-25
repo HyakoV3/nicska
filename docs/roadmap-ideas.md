@@ -17,6 +17,7 @@ Ideias ainda não decididas ou só parcialmente feitas. Nada aqui está prometid
 | Apito com mais de uma baia ativa | parcial (janela do apito feita) | avaliar no estande; é validação de campo, não ideia |
 | Histórico: editar itens da tentativa | parcial (a pontuação já se edita no Histórico) | trocar percurso e outros campos depois de salva |
 | Nota de desempenho estilo fliperama (S, A, B, C, D) | aberta | derivar do HF ou dos seus tempos |
+| Parar a gravação sem segurar 1 s (ideia do mantenedor, 2026-11-24) | aberta, só ideia | hoje o botão exige segurar ~1 s para parar com a tentativa correndo (evita parar sem querer). A dúvida levantada: isso pesa na velocidade? Pelo código, não: o `Segurar` só roda com o dedo no botão e só mexe na barra dele. Alternativas a avaliar: toque duplo, deslizar para confirmar, ou toque simples com desfazer. Se o diagnóstico de desempenho mostrar travada só no fim da fase "correndo", reavaliar |
 | Detalhes de interface | abertos | trilha preenchida do slider; Salvar fixo embaixo; acordeão exclusivo no resultado (o `Cartao` já aceita `name`, falta usar); ícone monocromático do Android (**regrediu**: o `ic_launcher.xml` atual não tem `<monochrome>`); SVG da fase 4 e ícone da fase 3 em quadrado |
 
 > **Revisão pedida ao Opus 5 (2026-11-23):** conferir cada ideia contra o código e as docs (já atendida, parcial ou do zero) e anotar o resultado na seção "Revisão das ideias (Opus 5, 2026-11-23)" no fim deste arquivo.
