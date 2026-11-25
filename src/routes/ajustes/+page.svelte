@@ -4,6 +4,8 @@
   import Aviso from "$lib/Aviso.svelte";
   import Cartao from "$lib/Cartao.svelte";
   import Dados from "$lib/Dados.svelte";
+  import DesempenhoRelatorios from "$lib/DesempenhoRelatorios.svelte";
+  import Laboratorio from "$lib/Laboratorio.svelte";
   import MeuPerfil from "$lib/MeuPerfil.svelte";
   import OverlayDeVideo from "$lib/OverlayDeVideo.svelte";
   import QualidadeDoVideo from "$lib/QualidadeDoVideo.svelte";
@@ -37,6 +39,8 @@
   let qualidadeAberta = $state(false);
   let retencaoAberta = $state(false);
   let overlayAberto = $state(false);
+  let laboratorioAberto = $state(false);
+  let desempenhoAberto = $state(false);
   let sobreAberto = $state(false);
   let creditosAberto = $state(false);
 
@@ -122,6 +126,18 @@
   <section>
     <Cartao id="cartao-video-overlay" titulo={t("ajustes.overlay")} bind:aberto={overlayAberto}>
       <OverlayDeVideo />
+    </Cartao>
+  </section>
+
+  <section>
+    <Cartao id="cartao-laboratorio" titulo={t("ajustes.laboratorio")} bind:aberto={laboratorioAberto}>
+      <Laboratorio />
+    </Cartao>
+  </section>
+
+  <section>
+    <Cartao id="cartao-desempenho" titulo={t("ajustes.desempenho")} bind:aberto={desempenhoAberto}>
+      {#if desempenhoAberto}<DesempenhoRelatorios />{/if}
     </Cartao>
   </section>
 

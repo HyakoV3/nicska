@@ -1,10 +1,11 @@
 <script lang="ts">
   import urlDaMarca from "./assets/marca-nicska.webp";
   import Avatar from "./Avatar.svelte";
+  import { numeroComCasas } from "./formatarNumero";
   import { i18n } from "./i18n/index.svelte";
   import type { PrefsOverlay } from "./preferencias";
   import { formatarSegundos } from "./tentativa";
-  import { CLARAO_MS, SPLITS_VISIVEIS, dataDoCabecalho, estadoDoOverlay, opacidadeDoSplit, type DadosDoOverlay } from "./video/overlay";
+  import { CLARAO_MS, dataDoCabecalho, estadoDoOverlay, opacidadeDoSplit, ultimosSplits, type DadosDoOverlay } from "./video/overlay";
 
   // O overlay desenhado SOBRE o vídeo na reprodução (caminho B): não conhece o <video>, só o tempo dele (`tempoS`, que quem toca atualiza a cada quadro),
   // então serve igual ao vídeo importado (I-04). É decorativo para o leitor de tela (aria-hidden): os mesmos números estão em texto no resultado e na lista.
@@ -15,10 +16,11 @@
   let { tempoS, dados, opcoes, reservaBaixo = false }: { tempoS: number; dados: DadosDoOverlay; opcoes: PrefsOverlay; reservaBaixo?: boolean } = $props();
   const t = (c: Parameters<typeof i18n.t>[0], p?: Record<string, string | number>) => i18n.t(c, p);
   const seg = (ms: number) => formatarSegundos(ms, i18n.idioma);
-  const hf = (v: number) => new Intl.NumberFormat(i18n.idioma, { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(v);
+  const hf = (v: number) => numeroComCasas(v, 4, i18n.idioma);
 
   const estado = $derived(estadoDoOverlay(tempoS, dados));
-  const splits = $derived(estado.splits.slice(-SPLITS_VISIVEIS));
+  // Os últimos splits: a MESMA lista enquanto os disparos não mudam (ultimosSplits guarda a anterior), então a lista do {#each} não é refeita a cada tick.
+  const splits = $derived(ultimosSplits(estado.splits));
   const cabecalho = $derived([dados.percurso, dados.divisao, dataDoCabecalho(dados.data, i18n.idioma)].filter(Boolean).join(" · "));
   /** O clarão do apito some aos poucos em `CLARAO_MS` (a opacidade vem do tempo do vídeo, não de uma animação: pausado, fica parado). */
   const clarao = $derived(estado.clarao ? 0.55 * (1 - estado.decorridoMs / CLARAO_MS) : 0);

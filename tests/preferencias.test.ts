@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LIMITES_TIMER, lerAvisoVideoVisto, lerOverlay, lerRegistro, registroPadrao, salvarAvisoVideoVisto, salvarRegistro, overlayPadrao, salvarOverlay, ajustesPadrao, lerAjustes, lerAvisoVozVisto, lerTimer, salvarAjustes, salvarAvisoVozVisto, salvarTimer, timerPadrao } from "../src/lib/preferencias";
+import { LIMITES_TIMER, apagarRelatoriosDeDesempenho, guardarRelatorioDeDesempenho, laboratorioPadrao, lerLaboratorio, lerRelatoriosDeDesempenho, salvarLaboratorio, lerAvisoVideoVisto, lerOverlay, lerRegistro, registroPadrao, salvarAvisoVideoVisto, salvarRegistro, overlayPadrao, salvarOverlay, ajustesPadrao, lerAjustes, lerAvisoVozVisto, lerTimer, salvarAjustes, salvarAvisoVozVisto, salvarTimer, timerPadrao } from "../src/lib/preferencias";
 
 // localStorage simples, em memória.
 let mem: Record<string, string>;
@@ -166,5 +166,45 @@ describe("registro (Ajustes → Registro, V2b)", () => {
     expect(lerAvisoVideoVisto()).toBe(false);
     salvarAvisoVideoVisto();
     expect(lerAvisoVideoVisto()).toBe(true);
+  });
+});
+
+describe("laboratório de desempenho", () => {
+  it("o padrão é overlay ligado, 30 Hz, medir ligado e gravar o vídeo", () => {
+    expect(laboratorioPadrao()).toEqual({ overlayAoVivo: true, taxaHz: 30, medirDesempenho: true, gravarVideo: true });
+    expect(lerLaboratorio()).toEqual(laboratorioPadrao());
+  });
+  it("guarda e lê de volta", () => {
+    salvarLaboratorio({ overlayAoVivo: false, taxaHz: 10, medirDesempenho: false, gravarVideo: false });
+    expect(lerLaboratorio()).toEqual({ overlayAoVivo: false, taxaHz: 10, medirDesempenho: false, gravarVideo: false });
+  });
+  it("lixo vale o padrão, campo a campo", () => {
+    mem["prefs.laboratorio"] = JSON.stringify({ overlayAoVivo: "não", taxaHz: 45, medirDesempenho: 1, gravarVideo: false });
+    expect(lerLaboratorio()).toEqual({ ...laboratorioPadrao(), gravarVideo: false });
+    mem["prefs.laboratorio"] = JSON.stringify({ taxaHz: "60" });
+    expect(lerLaboratorio().taxaHz).toBe(30);
+    mem["prefs.laboratorio"] = JSON.stringify({ taxaHz: 60 });
+    expect(lerLaboratorio().taxaHz).toBe(60);
+    for (const ruim of ["{x", "[1]", "null", "7"]) {
+      mem["prefs.laboratorio"] = ruim;
+      expect(lerLaboratorio()).toEqual(laboratorioPadrao());
+    }
+  });
+});
+
+describe("relatórios de desempenho guardados (diag.desempenho)", () => {
+  const rel = (quando: string) => ({ versao: 1, quando, duracaoMs: 1, app: "a", qualidadePedida: { altura: 720, fps: 30 }, fases: { standby: { n: 1 }, correndo: { n: 2 } } }) as never;
+  it("guarda do mais novo ao mais velho, no máximo 10, e apaga", () => {
+    for (let i = 0; i < 12; i++) guardarRelatorioDeDesempenho(rel(`2026-11-24T10:${String(i).padStart(2, "0")}:00Z`));
+    const l = lerRelatoriosDeDesempenho();
+    expect(l).toHaveLength(10);
+    expect(l[0].quando).toBe("2026-11-24T10:11:00Z");
+    apagarRelatoriosDeDesempenho();
+    expect(lerRelatoriosDeDesempenho()).toEqual([]);
+  });
+  it("lixo guardado vale lista vazia e não impede de guardar", () => {
+    mem["diag.desempenho"] = "###";
+    expect(lerRelatoriosDeDesempenho()).toEqual([]);
+    expect(guardarRelatorioDeDesempenho(rel("2026-11-24T10:00:00Z"))).toHaveLength(1);
   });
 });

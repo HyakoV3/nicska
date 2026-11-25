@@ -147,6 +147,25 @@ describe("GravadorDeVideo: gravar", () => {
     expect(g.fluxo.getVideoTracks()).toHaveLength(1);
     expect(fabricas.gravador).toHaveBeenCalledWith(expect.anything(), "video/webm;codecs=vp8,opus", qualidadePadrao());
   });
+  it("o gancho dos pedaços avisa a cada pedaço com dados (o vazio não conta), cancela e não atrapalha se o ouvinte falhar", async () => {
+    const { v, gravadores, banco, pedido } = montar();
+    const avisos: number[] = [];
+    const soltar = v.ouvirPedacos(() => void avisos.push(1));
+    v.ouvirPedacos(() => {
+      throw new Error("ouvinte com defeito");
+    });
+    expect(await v.iniciar(pedido)).toBeNull();
+    gravadores[0].pedaco("a");
+    gravadores[0].pedaco("");
+    expect(avisos).toHaveLength(1);
+    gravadores[0].pedaco("c");
+    expect(avisos).toHaveLength(2);
+    soltar();
+    gravadores[0].pedaco("b");
+    expect(avisos).toHaveLength(2);
+    await v.parar();
+    expect(banco).toBeDefined(); // os pedaços seguiram para o banco apesar do ouvinte que falhou (conferido no teste dos pedaços em ordem)
+  });
   it("os pedaços vão ao banco em ordem; parar normal = inteiro (parcial false), câmera solta, microfone intocado", async () => {
     const { v, banco, gravadores, cameras, microfone, pedido } = montar();
     await v.iniciar(pedido);

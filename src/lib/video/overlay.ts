@@ -64,11 +64,43 @@ function msDesdeOApito(tempoNoVideoS: number, zeroNoVideoS: number): number {
   return Number.isFinite(ms) ? ms : -1;
 }
 
-/** Os splits dos disparos até `ms` (inclusive: no instante exato do tiro ele já conta), pelos splits do `resumir`. */
+/**
+ * Todos os splits de `disparosMs` (pelos splits do `resumir`), na ORDEM dos disparos. Guardado por lista: enquanto a mesma lista (mesma referência e os
+ * mesmos instantes, conferidos um a um: sem alocar, e uma edição no lugar não deixa o guardado velho) é perguntada de novo, devolve o MESMO array, sem refazer nada (o overlay ao vivo pergunta a cada atualização do cronômetro,
+ * e os disparos só mudam a cada tiro). Quem recebe não deve alterar o array.
+ */
+const cacheDosSplits = new WeakMap<readonly number[], SplitDoOverlay[]>();
+export function todosOsSplits(disparosMs: readonly number[]): SplitDoOverlay[] {
+  const guardado = cacheDosSplits.get(disparosMs);
+  if (guardado && guardado.length === disparosMs.length && guardado.every((s, i) => s.instanteMs === disparosMs[i])) return guardado;
+  const { primeiro, splits: entre } = resumir(disparosMs);
+  const splits = disparosMs.map((d, i) => ({ n: i + 1, splitMs: i === 0 ? primeiro! : entre[i - 1], instanteMs: d }));
+  cacheDosSplits.set(disparosMs, splits);
+  return splits;
+}
+
+/** Os splits dos disparos até `ms` (inclusive: no instante exato do tiro ele já conta). Todos já ocorridos = a própria lista guardada (sem copiar). */
+let ultimaFatia: { de: SplitDoOverlay[]; n: number; fatia: SplitDoOverlay[] } | null = null;
 function splitsAte(disparosMs: readonly number[], ms: number): SplitDoOverlay[] {
-  const { primeiro, splits } = resumir(disparosMs);
-  const ocorridos = disparosMs.filter((d) => d <= ms).length;
-  return disparosMs.slice(0, ocorridos).map((d, i) => ({ n: i + 1, splitMs: i === 0 ? primeiro! : splits[i - 1], instanteMs: d }));
+  const todos = todosOsSplits(disparosMs);
+  let ocorridos = 0;
+  while (ocorridos < todos.length && todos[ocorridos].instanteMs <= ms) ocorridos++;
+  if (ocorridos === todos.length) return todos;
+  if (ultimaFatia && ultimaFatia.de === todos && ultimaFatia.n === ocorridos) return ultimaFatia.fatia;
+  const fatia = todos.slice(0, ocorridos);
+  ultimaFatia = { de: todos, n: ocorridos, fatia };
+  return fatia;
+}
+
+/** Os últimos `quantos` splits da lista (os que cabem na tela). A mesma lista de entrada devolve o mesmo array: o desenho só refaz quando algo mudou. */
+let ultimosGuardados: { de: SplitDoOverlay[]; n: number; quantos: number; fatia: SplitDoOverlay[] } | null = null;
+export function ultimosSplits(splits: SplitDoOverlay[], quantos: number = SPLITS_VISIVEIS): SplitDoOverlay[] {
+  if (splits.length <= quantos) return splits;
+  const g = ultimosGuardados;
+  if (g && g.de === splits && g.n === splits.length && g.quantos === quantos) return g.fatia;
+  const fatia = splits.slice(-quantos);
+  ultimosGuardados = { de: splits, n: splits.length, quantos, fatia };
+  return fatia;
 }
 
 /** O resultado final: total, 1º disparo, quantos, pontos e HF (o mesmo `hitFactor` da Revisão e do Histórico) e o selo de incompleta. */
@@ -79,12 +111,13 @@ function resultadoDe(dados: DadosDoOverlay): ResultadoDoOverlay {
   return { totalMs: r.total!, primeiroMs: r.primeiro!, n: r.n, pontos, hf, incompleta: dados.incompleta === true };
 }
 
-const ANTES: EstadoDoOverlay = { fase: "antes", decorridoMs: 0, nDisparos: 0, splits: [], recente: null, clarao: false, resultado: null };
+/** O estado de antes do apito: UM objeto só, congelado (nada por quadro enquanto o STAND BY está na tela). */
+const ANTES: EstadoDoOverlay = Object.freeze({ fase: "antes", decorridoMs: 0, nDisparos: 0, splits: Object.freeze([]) as unknown as SplitDoOverlay[], recente: null, clarao: false, resultado: null });
 
 /** O que mostrar no instante `tempoNoVideoS` (s desde o começo do vídeo). Sem disparos não há fim conhecido: o cronômetro corre, como corria a escuta. */
 export function estadoDoOverlay(tempoNoVideoS: number, dados: DadosDoOverlay): EstadoDoOverlay {
   const ms = msDesdeOApito(tempoNoVideoS, dados.zeroNoVideoS);
-  if (ms < 0) return { ...ANTES, splits: [] };
+  if (ms < 0) return ANTES;
   const d = dados.disparosMs;
   const total = d.length ? d[d.length - 1] : null;
   const fim = !dados.aoVivo && total !== null && ms >= total;

@@ -5,7 +5,7 @@ import { atrasoDeSaida, type Apito } from "./apito";
 import { motivoDoErro } from "./audioComum";
 import { avisoTresDois, PADRAO_PARTIDA } from "./vibracao321";
 import type { Escuta } from "./escuta";
-import { lerQualidade, lerRegistro, lerRetencao, type PrefsTimer } from "./preferencias";
+import { lerLaboratorio, lerQualidade, lerRegistro, lerRetencao, type PrefsTimer } from "./preferencias";
 import { armarServico, desarmarServico, foneConectado } from "./servico";
 import { Timer, type Dependencias, type OpcoesDeVideo, type Resultado } from "./timer";
 import type { GravadorDeVideo } from "./video/gravadorDeVideo";
@@ -90,6 +90,7 @@ export function criarTimerDoApp({ escuta, apito, video, aoProteger }: PecasDoTim
 export function opcoesDeVideoDoApp(fluxoDaCamera?: MediaStream | null): OpcoesDeVideo | null {
   const r = lerRegistro();
   if (r.modo !== "video") return null;
+  if (!lerLaboratorio().gravarVideo) return null; // laboratório: a câmera e a prévia abrem, mas o vídeo não é gravado (a tentativa salva normalmente, sem vídeo)
   return { camera: r.camera, qualidade: lerQualidade(), ...(fluxoDaCamera && { fluxoDaCamera }) };
 }
 

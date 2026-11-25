@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import BotaoSegurar from "./BotaoSegurar.svelte";
   import Janela from "./Janela.svelte";
   import OverlayAoVivo from "./OverlayAoVivo.svelte";
@@ -6,11 +7,15 @@
   import { i18n } from "./i18n/index.svelte";
   import { registrarNivel } from "./navegacao";
   import { soltarOrientacao, travarOrientacao } from "./orientacao";
-  import { lerAvisoEnquadrarVisto, lerAvisoVideoVisto, lerRegistro, salvarAvisoEnquadrarVisto, salvarAvisoVideoVisto } from "./preferencias";
+  import { guardarRelatorioDeDesempenho, lerAvisoEnquadrarVisto, lerAvisoVideoVisto, lerLaboratorio, lerOverlay, lerQualidade, lerRegistro, salvarAvisoEnquadrarVisto, salvarAvisoVideoVisto } from "./preferencias";
+  import { versaoDoApp } from "./dados";
   import { manterTelaAcesa } from "./telaAcesa";
   import { manterImersivo } from "./telaImersiva";
   import type { Instantaneo } from "./timer";
   import { chaveDoSemVideo } from "./video/avisos";
+  import { MedidorDeDesempenho } from "./video/desempenho";
+  import { ambienteDoNavegador, depsDoNavegador } from "./video/desempenhoNavegador";
+  import type { GravadorDeVideo } from "./video/gravadorDeVideo";
   import { acaoDoBotao, acaoDoVoltar, type FaseDaTelaCheia } from "./video/telaCheia";
 
   // A tela cheia do modo vídeo (V2b), por cima de tudo (<dialog> modal: camada de cima, o resto fica inerte). Passo 1, enquadrar: a câmera ocupa a tela, o
@@ -19,7 +24,7 @@
   // antes do apito um toque cancela, correndo é preciso segurar. As regras são puras (video/telaCheia.ts). Enquanto aberta: tela acesa, barras do sistema
   // escondidas e, depois do Começar, orientação travada (C8); tudo solto ao fechar, com erro ou não (os `$effect` desfazem ao desmontar).
   type Acoes = { aoComecar: () => void; aoSair: () => void; aoCancelar: () => void; aoParar: () => void };
-  let { fase, snap, anuncio, agoraDaEscutaS, percursoId, fluxo = $bindable(null), aoComecar, aoSair, aoCancelar, aoParar }: Acoes & {
+  let { fase, snap, anuncio, agoraDaEscutaS, percursoId, fluxo = $bindable(null), gravador, aoComecar, aoSair, aoCancelar, aoParar }: Acoes & {
     fase: FaseDaTelaCheia;
     snap: Instantaneo;
     /** O que o leitor de tela ouve (o mesmo da aba: Standby e resultado), aqui dentro porque o resto da página fica inerte. */
@@ -27,10 +32,14 @@
     agoraDaEscutaS: () => number | null;
     percursoId: string | null;
     fluxo?: MediaStream | null;
+    /** O gravador do vídeo (para o medidor de desempenho saber quando chega cada pedaço); nulo se não há. */
+    gravador?: () => GravadorDeVideo | null;
   } = $props();
   const t = (c: Parameters<typeof i18n.t>[0], p?: Record<string, string | number>) => i18n.t(c, p);
 
   const camera = lerRegistro().camera;
+  // O Laboratório (Ajustes): lido uma vez ao abrir. Com o overlay ao vivo desligado, a tela mostra só a câmera e o botão.
+  const lab = lerLaboratorio();
   const enquadrar = $derived(fase === "enquadrar");
   const botao = $derived(acaoDoBotao(fase));
   let caixa = $state<HTMLDialogElement | null>(null);
@@ -103,6 +112,41 @@
     travarOrientacao();
     return soltarOrientacao;
   });
+  // O medidor de desempenho (video/desempenho.ts): começa quando a tentativa começa (saiu do enquadrar), troca de fase quando a escuta começa e para ao fechar,
+  // guardando o relatório. Só com "Medir desempenho" ligado no Laboratório. Nunca atrapalha a gravação: qualquer falha é ignorada.
+  const medidor = lab.medirDesempenho
+    ? new MedidorDeDesempenho(depsDoNavegador({ video: () => caixa?.querySelector("video") ?? null, fluxo: () => fluxo }))
+    : null;
+  $effect(() => {
+    if (!medidor || enquadrar) return;
+    untrack(() => {
+      try {
+        medidor.iniciar({ app: versaoDoApp(), ambiente: ambienteDoNavegador(), qualidadePedida: lerQualidade(), cameraPedida: camera, overlay: lerOverlay(), laboratorio: lab });
+      } catch {
+        /* sem medição */
+      }
+    });
+    const soltarPedacos = gravador?.()?.ouvirPedacos(() => medidor.registrarPedaco());
+    return () => {
+      soltarPedacos?.();
+      try {
+        const r = medidor.parar();
+        if (r) guardarRelatorioDeDesempenho(r);
+      } catch {
+        /* sem medição */
+      }
+    };
+  });
+  $effect(() => {
+    // `medindo` não é reativo: ler `fase` e `enquadrar` ANTES de qualquer retorno, para o efeito rodar de novo quando elas mudam (a fase "correndo" depende disso).
+    const f = fase;
+    const parado = enquadrar;
+    if (parado || !medidor?.medindo) return;
+    medidor.marcarFase(f === "correndo" ? "correndo" : "standby");
+  });
+  $effect(() => {
+    if (fluxo) medidor?.capturarCamera();
+  });
   const cancelarEvento = (e: Event) => {
     e.preventDefault(); // o Esc passa por aqui: quem decide é a regra do Voltar
     voltar();
@@ -125,7 +169,7 @@
       </Janela>
     {/if}
   {:else}
-    <OverlayAoVivo {snap} {agoraDaEscutaS} {percursoId} />
+    {#if lab.overlayAoVivo}<OverlayAoVivo {snap} {agoraDaEscutaS} {percursoId} />{/if}
     {#if snap.semVideo}<p class="aviso-video" role="status">{t(chaveDoSemVideo(snap.semVideo))}</p>{/if}
     <div class="canto">
       {#if botao}<BotaoSegurar acao={botao} {aoCancelar} {aoParar} aoCedo={mostrarDica} />{/if}

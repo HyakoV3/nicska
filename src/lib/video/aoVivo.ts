@@ -26,3 +26,22 @@ export function dadosAoVivo(snap: Pick<Instantaneo, "disparosMs">, extras: Extra
 export function opcoesAoVivo(p: PrefsOverlay): PrefsOverlay {
   return p.ligado ? p : { ligado: true, avatar: false, nome: false, cabecalho: false, splits: false, marca: false };
 }
+
+/** Os centésimos de segundo MOSTRADOS no cronômetro (o texto tem 2 casas): -1 no STAND BY. Dois tempos com o mesmo valor aqui desenham o mesmo cronômetro. */
+export function centesimosDe(tempoS: number): number {
+  return tempoS < 0 || !Number.isFinite(tempoS) ? -1 : Math.round(tempoS * 100);
+}
+
+/** Que fração do intervalo da taxa já basta (a tela chega a ~16,7 ms por quadro: pedir 33,3 ms cheios perderia o quadro seguinte por 1 ms de folga e cairia para 20 Hz). */
+const FOLGA_DO_QUADRO = 0.85;
+
+/**
+ * O overlay ao vivo precisa redesenhar agora? Só se o valor MOSTRADO mudou (`novoCs` ≠ `ultimoMostradoCs`, em centésimos) E já passou o intervalo da taxa
+ * (`taxaHz`) desde a última atualização (`ultimoTs`, `agoraTs`: ms do relógio de alta resolução). Nada de trabalho por quadro quando nada mudou.
+ * `ultimoMostradoCs` NaN ou `ultimoTs` -Infinity (nada mostrado ainda) deixam passar. Taxa inválida vale sem limite de taxa (só a troca de valor).
+ */
+export function deveAtualizar(ultimoMostradoCs: number, novoCs: number, ultimoTs: number, agoraTs: number, taxaHz: number): boolean {
+  if (novoCs === ultimoMostradoCs) return false;
+  if (!(taxaHz > 0) || !Number.isFinite(taxaHz)) return true;
+  return agoraTs - ultimoTs >= (1000 / taxaHz) * FOLGA_DO_QUADRO;
+}
