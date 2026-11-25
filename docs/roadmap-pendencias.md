@@ -79,6 +79,13 @@ Tudo o que é ideia (fala, V4, restos do vídeo, editar tentativa, nota S/A/B/C/
 - [ ] Barra fixa: conferir no aparelho com teclado aberto e em tablet.
 - [x] Feitos em 2026-11-24 (falta só validar no aparelho): taxa do `devicemotion` no diagnóstico, vídeos órfãos limpos ao abrir, retenção que não apaga o recém-salvo (mínimo 1 GB, padrão 2 GB), tela cheia da reprodução com overlay, acordeão exclusivo, trilha dos sliders, aliasing do `tanh` medido (-59 dB sem oversample, < -118 dB com 2x: sem problema), vibração 3/2/1, 4K (avançado, 30 fps, 18 Mbps, recua para 1080p), trocar percurso e exportar legenda `.srt` no Histórico.
 
+## 8b. Investigação: travamento na gravação ao vivo (aberta, 2026-11-25)
+
+- **Sintoma:** no 0.1.3 (e 0.1.4) a gravação ao vivo na tela cheia trava (720p/1080p, 30 e 60 fps); o 0.1.2 estava bom. O selo "Latest" ficou no v0.1.2 e o 0.1.3 a 0.1.5 estão como pré-lançamento.
+- **Hipótese do mantenedor (plausível, ainda não testada):** foram as mudanças do 0.1.3 que tiraram a seleção azul e a pinça: `maximum-scale=1, user-scalable=no` no viewport, `touch-action` no `html` e na tela cheia, e `user-select: none` em todo elemento da tela cheia (`.tela-cheia *`). Entre o 0.1.2 e o 0.1.3 só mudaram isso (e a remoção da doação, que não afeta desempenho).
+- **Outro suspeito (já existia):** o laço `requestAnimationFrame` do cronômetro ao vivo redesenhava o overlay a cada quadro; no 0.1.5 foi limitado (centésimo muda, 30 Hz) e o `Intl.NumberFormat` ganhou cache.
+- **Como testar:** o 0.1.5 traz o Laboratório (overlay ao vivo, taxa 60/30/10 Hz, gravar vídeo sim/não) e o Diagnóstico de desempenho (Ajustes → compartilhar relatório). Próximo passo combinado: um interruptor "Bloqueios de toque (pinça e seleção)" no Laboratório, para comparar com e sem os três itens acima no mesmo APK.
+
 ## 9. Decisões do mantenedor (registro)
 
 - **2026-11-24: zoom de pinça desabilitado em todo o app, a pedido do mantenedor** (`maximum-scale=1, user-scalable=no` em `src/app.html` e `touch-action: pan-x pan-y` no `html`; na tela cheia da gravação, `touch-action: none`). Motivo: a pinça mudava a escala da câmera e do overlay e atrapalhava os toques durante a tentativa. **Ressalva registrada:** isso contraria a WCAG 1.4.4 (redimensionar texto); fica mitigado porque o app segue o tamanho de fonte do sistema Android e usa `rem`. Se uma revisão de acessibilidade ou a Play Store questionar, a decisão foi do mantenedor, não uma omissão; reverter é voltar o viewport e tirar o `touch-action`.
