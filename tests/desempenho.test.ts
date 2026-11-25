@@ -186,3 +186,15 @@ describe("a lista guardada", () => {
     expect(arq).toEqual({ formato: "nicska-desempenho/1", app: "v", exportadoEm: "2026-11-24T11:00:00Z", relatorios: [r] });
   });
 });
+
+describe("robustez dos relatórios guardados", () => {
+  const base = { versao: 1, quando: "2026-11-24T10:00:00.000Z", qualidadePedida: { altura: 720, fps: 30 }, fases: { standby: { n: 3, p95Ms: 20, acima: { "50": 1 } }, correndo: { n: 5, p95Ms: 30, acima: { "50": 2 } } } };
+  it("descarta relatórios com a mesma data", () => {
+    const lista = relatoriosDoTexto(JSON.stringify([base, base, { ...base, quando: "2026-11-24T11:00:00.000Z" }]));
+    expect(lista.map((r) => r.quando)).toEqual(["2026-11-24T10:00:00.000Z", "2026-11-24T11:00:00.000Z"]);
+  });
+  it("o resumo ignora valores que não são números", () => {
+    const r = { ...base, fases: { ...base.fases, correndo: { n: 5, p95Ms: "lento", acima: { "50": {} } } } } as never;
+    expect(resumoDaFase(r, "correndo")).toEqual({ n: 5, p95Ms: 0, acima50: 0 });
+  });
+});

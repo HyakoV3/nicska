@@ -261,7 +261,9 @@ export function relatoriosDoTexto(bruto: string | null): RelatorioDeDesempenho[]
   if (!bruto) return [];
   try {
     const o: unknown = JSON.parse(bruto);
-    return Array.isArray(o) ? o.filter(ehRelatorio).slice(0, MAXIMO_DE_RELATORIOS) : [];
+    if (!Array.isArray(o)) return [];
+    const vistos = new Set<string>(); // `quando` é a chave da lista na tela: repetido (armazenamento editado, relógio mexido) é descartado
+    return o.filter((x) => ehRelatorio(x) && !vistos.has(x.quando) && !!vistos.add(x.quando)).slice(0, MAXIMO_DE_RELATORIOS);
   } catch {
     return [];
   }
@@ -270,7 +272,9 @@ export function relatoriosDoTexto(bruto: string | null): RelatorioDeDesempenho[]
 /** O resumo de uma fase para a lista de Ajustes: p95 do intervalo entre quadros e quantos passaram de 50 ms. */
 export function resumoDaFase(r: RelatorioDeDesempenho, fase: FaseDeMedicao): { n: number; p95Ms: number; acima50: number } {
   const f = r.fases[fase];
-  return { n: f.n, p95Ms: f.p95Ms ?? 0, acima50: f.acima?.["50"] ?? 0 };
+  // Vem do armazenamento (pode estar corrompido ou ser de outra versão): só números finitos chegam à tela.
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+  return { n: num(f.n), p95Ms: num(f.p95Ms), acima50: num(f.acima?.["50"]) };
 }
 
 /** O arquivo que a pessoa compartilha: TODOS os relatórios guardados, com a versão do app e a data da exportação. */

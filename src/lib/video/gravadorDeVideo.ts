@@ -95,7 +95,7 @@ export class GravadorDeVideo {
     this.gravacao = g;
     this.pendente = p.id;
     gravador.ondataavailable = (e) => {
-      this.avisarPedaco();
+      if (e.data.size > 0) this.avisarPedaco(); // pedaço vazio não conta: o medidor veria intervalos falsos entre pedaços reais
       this.guardar(g, e.data);
     };
     // A câmera que cai no meio (outro app a tomou, erro do gravador) para só o vídeo; o áudio e a tentativa seguem (C8).

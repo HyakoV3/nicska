@@ -44,9 +44,11 @@
   $effect(() => {
     const e = estado;
     const z = zeroS;
-    tempoS = tempoAoVivoS(e, z, agoraDaEscutaS());
+    const inicial = tempoAoVivoS(e, z, agoraDaEscutaS());
+    tempoS = inicial;
     if (e !== "escutando") return;
-    let ultimoCs = centesimosDe(tempoS);
+    // Nunca ler `tempoS` aqui dentro: o efeito o escreve, e lê-lo o tornaria dependência (cada atualização reiniciaria o laço e anularia o limite de taxa).
+    let ultimoCs = centesimosDe(inicial);
     let ultimoTs = performance.now();
     let id = 0;
     const quadro = () => {

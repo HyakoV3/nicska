@@ -147,7 +147,7 @@ describe("GravadorDeVideo: gravar", () => {
     expect(g.fluxo.getVideoTracks()).toHaveLength(1);
     expect(fabricas.gravador).toHaveBeenCalledWith(expect.anything(), "video/webm;codecs=vp8,opus", qualidadePadrao());
   });
-  it("o gancho dos pedaços avisa a cada dataavailable (inclusive vazio), cancela e não atrapalha se o ouvinte falhar", async () => {
+  it("o gancho dos pedaços avisa a cada pedaço com dados (o vazio não conta), cancela e não atrapalha se o ouvinte falhar", async () => {
     const { v, gravadores, banco, pedido } = montar();
     const avisos: number[] = [];
     const soltar = v.ouvirPedacos(() => void avisos.push(1));
@@ -157,6 +157,8 @@ describe("GravadorDeVideo: gravar", () => {
     expect(await v.iniciar(pedido)).toBeNull();
     gravadores[0].pedaco("a");
     gravadores[0].pedaco("");
+    expect(avisos).toHaveLength(1);
+    gravadores[0].pedaco("c");
     expect(avisos).toHaveLength(2);
     soltar();
     gravadores[0].pedaco("b");

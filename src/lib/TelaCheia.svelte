@@ -138,8 +138,11 @@
     };
   });
   $effect(() => {
-    if (!medidor?.medindo) return;
-    medidor.marcarFase(fase === "correndo" ? "correndo" : "standby");
+    // `medindo` não é reativo: ler `fase` e `enquadrar` ANTES de qualquer retorno, para o efeito rodar de novo quando elas mudam (a fase "correndo" depende disso).
+    const f = fase;
+    const parado = enquadrar;
+    if (parado || !medidor?.medindo) return;
+    medidor.marcarFase(f === "correndo" ? "correndo" : "standby");
   });
   $effect(() => {
     if (fluxo) medidor?.capturarCamera();
