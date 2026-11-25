@@ -10,6 +10,8 @@ import { join } from "node:path";
 import process from "node:process";
 
 const PORTA_VITE = Number(process.env.NK_PORTA_VITE ?? 5199);
+// Um valor como literal JavaScript seguro para colar em código injetado na página: JSON, mais "<" e os separadores de linha U+2028/U+2029 escapados.
+const lit = (v) => JSON.stringify(v).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 const PORTA_CHROME = 9340;
 const RAIZ = new URL("../../", import.meta.url).pathname;
 
@@ -452,7 +454,7 @@ async function principal() {
       const base = 1700 - d * 120 - k * 20;
       const disparos = [base, base + 260 - d * 15, base + 520 - d * 25, base + 800 - d * 30 + (k === 2 ? 400 : 0), base + 1080 - d * 40 + (k === 2 ? 400 : 0)];
       const data = dia + 'T1' + k + ':00:00-03:00';
-      await armazenamento.salvarTentativa({ id: 'seed' + (n++), percurso_id: ${JSON.stringify("__PID__")}, data, quando: Date.parse(data), atraso_ms: 2000, inicio: 'detectado', disparos_ms: disparos, editada: { apagados: 0, inseridos: 0 }, detector: { versao: 1, sensibilidade: 0.6, tempo_morto_ms: 60 } });
+      await armazenamento.salvarTentativa({ id: 'seed' + (n++), percurso_id: ${lit("__PID__")}, data, quando: Date.parse(data), atraso_ms: 2000, inicio: 'detectado', disparos_ms: disparos, editada: { apagados: 0, inseridos: 0 }, detector: { versao: 1, sensibilidade: 0.6, tempo_morto_ms: 60 } });
     }
   })()`.replace("__PID__", percId));
   // CONS-029: a aba interna escolhida sobrevive à recarga do Histórico (sair e voltar)
@@ -526,8 +528,8 @@ async function principal() {
   confere(await esperarAte(`document.querySelectorAll('.ranking tbody tr').length === 1`, 15000), "filtrar por Production deixa só Beto (eu não declarei divisão)");
 
   // 9b2. CONS-014: um arquivo recebido de outro app só é gravado depois da confirmação (e o backup de outra pessoa pergunta de quem são as tentativas)
-  const recebido = (texto) => av(`import('/src/lib/inicio.svelte.ts').then(({ inicio }) => { inicio.recebido = ${JSON.stringify(texto)}; })`);
-  const temTentativa = (id) => av(`import('/src/lib/armazenamento.ts').then(async ({ armazenamento }) => (await armazenamento.ids()).tentativas.has(${JSON.stringify(id)}))`);
+  const recebido = (texto) => av(`import('/src/lib/inicio.svelte.ts').then(({ inicio }) => { inicio.recebido = ${lit(texto)}; })`);
+  const temTentativa = (id) => av(`import('/src/lib/armazenamento.ts').then(async ({ armazenamento }) => (await armazenamento.ids()).tentativas.has(${lit(id)}))`);
   const umaTentativa = (id) => ({ id, data: "2026-11-21T10:00:00-03:00", atraso_ms: 1500, inicio: "detectado", disparos_ms: [900, 1200], editada: { apagados: 0, inseridos: 0 }, detector: { versao: 1, sensibilidade: 0.6, tempo_morto_ms: 60 } });
   const compartilhado = JSON.stringify({ formato: "nicska/1", app: "e2e", atirador: { id: "caio", nome: "Caio" }, percurso: { id: percId, nome: "Bill Drill" }, tentativas: [umaTentativa("caio0")] });
   await recebido(compartilhado);
@@ -551,8 +553,8 @@ async function principal() {
   confere(await esperarAte(`document.querySelector('.historico .importacao button.primario').disabled === false`), "escolhida a opção, Importar liga");
   await av(`document.querySelector('.historico .importacao button.primario').click()`);
   confere(await esperarAte(`!document.querySelector('.historico .importacao')`, 15000), "Importar fecha a confirmação");
-  const donoDora = await av(`import('/src/lib/armazenamento.ts').then(async ({ armazenamento }) => (await armazenamento.todasDoPercurso(${JSON.stringify(percId)}, 'dora')).map((x) => x.atirador_id))`);
-  confere(donoDora.filter((x) => x === "dora").length === 1, `"de outra pessoa" grava as tentativas com o atirador_id dela (veio ${JSON.stringify(donoDora)})`);
+  const donoDora = await av(`import('/src/lib/armazenamento.ts').then(async ({ armazenamento }) => (await armazenamento.todasDoPercurso(${lit(percId)}, 'dora')).map((x) => x.atirador_id))`);
+  confere(donoDora.filter((x) => x === "dora").length === 1, `"de outra pessoa" grava as tentativas com o atirador_id dela (veio ${lit(donoDora)})`);
   // um arquivo que não presta não chega à confirmação
   await recebido("isto não é um arquivo do Nicska");
   confere(await esperarAte(`!!document.querySelector('.historico .aviso.erro') && !document.querySelector('.historico .importacao')`, 15000), "um arquivo inválido mostra o erro, sem a confirmação");
@@ -597,7 +599,7 @@ async function principal() {
     }
     for (let i = 0; i < 40; i++) { await espera(16); window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 0, z: g } })); }
   })()`);
-  confere(await esperarAte(`document.querySelector('.grande-botao').textContent.trim() !== ${JSON.stringify(antes)}`, 8000), "2 batidas iniciam o Standby (o botão deixa de ser Standby)");
+  confere(await esperarAte(`document.querySelector('.grande-botao').textContent.trim() !== ${lit(antes)}`, 8000), "2 batidas iniciam o Standby (o botão deixa de ser Standby)");
   confere(await esperarAte(`document.querySelector('.standby-grande')?.textContent.trim() === 'STAND BY'`, 8000), "ao começar o Standby, a tela mostra STAND BY grande");
   // durante a espera antes do apito, UMA batida cancela (depois da graça de 0,8 s)
   confere(await esperarAte(`!!document.querySelector('.dica') && /cancel/i.test(document.querySelector('.dica').textContent)`, 8000), "durante a espera, a dica diz que uma batida cancela");
@@ -608,7 +610,7 @@ async function principal() {
     ${mexer(25)};
     for (let i = 0; i < 40; i++) { await espera(16); ${mexer(9.81)}; }
   })()`);
-  confere(await esperarAte(`document.querySelector('.grande-botao').textContent.trim() === ${JSON.stringify(antes)}`, 8000), "uma batida durante a espera cancela e volta ao Standby");
+  confere(await esperarAte(`document.querySelector('.grande-botao').textContent.trim() === ${lit(antes)}`, 8000), "uma batida durante a espera cancela e volta ao Standby");
   // uma batida só não inicia
   await av(`(async () => {
     const espera = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -626,7 +628,7 @@ async function principal() {
   await av(`document.querySelector('.barra-fixa .grande-botao.perigo').click()`);
   confere(await esperarAte(`!document.querySelector('.barra-fixa')`), "o Cancelar da outra aba cancela o Standby (a barra some, pois o timer voltou a parado)");
   await av(`document.querySelector('#aba-timer').click()`);
-  confere(await esperarAte(`document.querySelector('.grande-botao')?.textContent.trim() === ${JSON.stringify(antes)}`), "de volta ao Timer, o botão é o Standby de novo");
+  confere(await esperarAte(`document.querySelector('.grande-botao')?.textContent.trim() === ${lit(antes)}`), "de volta ao Timer, o botão é o Standby de novo");
 
   confere(erros.length === 0, `nenhuma exceção na página${erros.length ? `: ${erros[0]}` : ""}`);
   ws.close();

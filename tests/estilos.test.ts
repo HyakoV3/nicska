@@ -43,7 +43,7 @@ describe("estilos de cor", () => {
 
     // Executa o script de verdade num contexto isolado: aplica o que está salvo e não cria variável global.
     const executar = (salvo: Record<string, string>) => {
-      const script = appHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
+      const script = appHtml.match(/<script>([\s\S]*?)<\/script[^>]*>/i)?.[1] ?? "";
       const documento = { documentElement: { dataset: {} as Record<string, string> } };
       const contexto: Record<string, unknown> = {
         localStorage: { getItem: (k: string) => salvo[k] ?? null },
@@ -108,7 +108,7 @@ describe("modo alto contraste", () => {
   });
 
   it("aplica o alto contraste salvo antes da primeira pintura, com qualquer estilo", () => {
-    const script = appHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
+    const script = appHtml.match(/<script>([\s\S]*?)<\/script[^>]*>/i)?.[1] ?? "";
     const documento = { documentElement: { dataset: {} as Record<string, string> } };
     runInNewContext(script, {
       localStorage: { getItem: (k: string) => ({ tema: "alto-contraste", estilo: "telemetria" })[k] ?? null },
