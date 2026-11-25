@@ -2,7 +2,17 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // Guarda do manifesto Android: o gen/ é versionado e é a fonte (o Tauri só gera o manifesto na criação do projeto, não o sobrescreve).
-const manifesto = readFileSync("src-tauri/gen/android/app/src/main/AndroidManifest.xml", "utf8").replace(/<!--[\s\S]*?-->/g, "");
+// Tira os comentários XML repetindo até não sobrar nenhum (um só passe pode deixar "<!--" ao juntar as pontas).
+const semComentariosXml = (s: string): string => {
+  let atual = s;
+  for (let anterior = ""; anterior !== atual; ) {
+    anterior = atual;
+    atual = atual.replace(/<!--[\s\S]*?-->/g, "");
+  }
+  return atual;
+};
+const escaparRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const manifesto = semComentariosXml(readFileSync("src-tauri/gen/android/app/src/main/AndroidManifest.xml", "utf8"));
 const permissoes = [...manifesto.matchAll(/<uses-permission\s+android:name="([^"]+)"/g)].map((m) => m[1]);
 
 describe("AndroidManifest.xml", () => {
@@ -22,7 +32,7 @@ describe("AndroidManifest.xml", () => {
 
   it("a câmera e o autofoco não são obrigatórios (uses-feature required=false)", () => {
     for (const f of ["android.hardware.camera", "android.hardware.camera.autofocus"]) {
-      expect(manifesto).toMatch(new RegExp(`<uses-feature\\s+android:name="${f.replace(/\./g, "\\.")}"\\s+android:required="false"`));
+      expect(manifesto).toMatch(new RegExp(`<uses-feature\\s+android:name="${escaparRegex(f)}"\\s+android:required="false"`));
     }
   });
 });

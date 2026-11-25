@@ -10,7 +10,15 @@ const arquivos = (dir: string): string[] =>
   });
 const codigo = arquivos("src").filter((p) => /\.(svelte|css|html)$/.test(p) && !p.endsWith("tema.css"));
 // Tira os comentários: neles os exemplos de cor e de px são só texto.
-const semComentarios = (s: string) => s.replace(/<!--[\s\S]*?-->/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+const repetir = (s: string, re: RegExp): string => {
+  let atual = s;
+  for (let anterior = ""; anterior !== atual; ) {
+    anterior = atual;
+    atual = atual.replace(re, "");
+  }
+  return atual;
+};
+const semComentarios = (s: string) => repetir(repetir(s, /<!--[\s\S]*?-->/g), /\/\*[\s\S]*?\*\//g).replace(/^\s*\/\/.*$/gm, "");
 
 describe("CSS: tokens e rem", () => {
   it("nenhum componente tem cor hexadecimal solta", () => {
