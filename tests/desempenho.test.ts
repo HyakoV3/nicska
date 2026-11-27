@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  AcumuladorDeIntervalos, MedidorDeDesempenho, acrescentarRelatorio, ambienteDoAparelho, arquivoDeRelatorios, percentil, relatoriosDoTexto, resumirIntervalos, resumoDaFase,
+  AcumuladorDeIntervalos, MedidorDeDesempenho, acrescentarRelatorio, ambienteDoAparelho, arquivoDeRelatorios, fpsConfigurado, fpsReal, fpsRealDaFase, percentil, relatoriosDoTexto, resumirIntervalos, resumoDaFase,
   type ContextoDoRelatorio, type DepsDoMedidor, type RelatorioDeDesempenho,
 } from "../src/lib/video/desempenho";
 import { laboratorioPadrao, overlayPadrao } from "../src/lib/preferencias";
@@ -101,7 +101,7 @@ describe("MedidorDeDesempenho", () => {
     const q = [{ descartados: 5, total: 100 }, { descartados: 12, total: 400 }];
     const a = montar({ qualidadeDoVideo: () => q.shift() ?? null });
     a.m.iniciar(contexto());
-    expect(a.m.parar()!.quadrosDoVideo).toEqual({ descartados: 7, total: 300 });
+    expect(a.m.parar()!.quadrosDoVideo).toEqual({ descartados: 7, total: 300, fpsReal: null, fpsPedido: 60 });
     const b = montar();
     b.m.iniciar(contexto());
     expect(b.m.parar()!.quadrosDoVideo).toBeNull();
@@ -129,6 +129,71 @@ describe("MedidorDeDesempenho", () => {
     expect(r).toMatchObject({ versao: 1, quando: "2026-11-24T10:00:00.000Z", duracaoMs: 2500, app: "0.1.4 (teste)", cameraPedida: "traseira", qualidadePedida: { altura: 1080, fps: 60 } });
     expect(r.ambiente).toEqual({ userAgent: "UA", devicePixelRatio: 2.5, tela: { largura: 1080, altura: 2400 }, nucleos: 8, memoriaGb: 4 });
     expect(r.laboratorio).toEqual(laboratorioPadrao());
+  });
+  it("fpsReal: quadros por segundo a 0,1; nulo sem dado", () => {
+    expect(fpsReal(60, 2000)).toBe(30);
+    expect(fpsReal(13, 2000)).toBe(6.5);
+    expect(fpsReal(100, 3000)).toBe(33.3);
+    expect(fpsReal(0, 2000)).toBeNull();
+    expect(fpsReal(10, 0)).toBeNull();
+    expect(fpsReal(NaN, 1000)).toBeNull();
+  });
+  it("quadrosDoVideo ganha fpsReal (total / duração) e fpsPedido", () => {
+    const q = [{ descartados: 0, total: 0 }, { descartados: 2, total: 150 }];
+    const { m, avancar } = montar({ qualidadeDoVideo: () => q.shift() ?? null });
+    m.iniciar({ ...contexto(), qualidadePedida: { altura: 720, fps: 30 } });
+    avancar(5000);
+    expect(m.parar()!.quadrosDoVideo).toEqual({ descartados: 2, total: 150, fpsReal: 30, fpsPedido: 30 });
+  });
+  it("cameraEntregue: quadros, fps real e intervalos separados por fase; limiar = 2x o esperado pelo fps pedido", () => {
+    let cb: (ms: number, mt: number | null) => void = () => {};
+    const { m, avancar } = montar({ observarQuadrosEntregues: (f) => ((cb = f), () => {}) });
+    m.iniciar({ ...contexto(), qualidadePedida: { altura: 720, fps: 30 } });
+    // standby: 3 s, 30 quadros a cada 33,3 ms em média (usa o relógio: sem mediaTime)
+    [0, 33, 66, 100, 300].forEach((t) => cb(t, null)); // 4 intervalos: 33, 33, 34 e 200 (um acima de 66,7)
+    avancar(2000);
+    m.marcarFase("correndo");
+    // correndo: o intervalo que cruza a troca vai para a fase nova; mediaTime manda quando anda
+    cb(400, 1.0);
+    cb(433, 1.1); // pelo mediaTime: 100 ms
+    cb(466, 1.1); // mediaTime parado: cai no relógio, 33 ms
+    avancar(500);
+    const r = m.parar()!;
+    expect(r.cameraEntregue).toMatchObject({ fpsPedido: 30 });
+    const s = r.cameraEntregue!.standby;
+    expect(s).toMatchObject({ n: 5, duracaoMs: 2000, fps: 2.5, lentos: 1, maxMs: 200, limiarMs: 66.7 });
+    const c = r.cameraEntregue!.correndo;
+    expect(c).toMatchObject({ n: 3, duracaoMs: 500, fps: 6, lentos: 2 });
+    expect(c.maxMs).toBeCloseTo(100, 0);
+  });
+  it("cameraEntregue: o limiar acompanha o fps pedido (60 fps: 33,3 ms) e sem requestVideoFrameCallback fica nulo", () => {
+    let cb: (ms: number, mt: number | null) => void = () => {};
+    const a = montar({ observarQuadrosEntregues: (f) => ((cb = f), () => {}) });
+    a.m.iniciar({ ...contexto(), qualidadePedida: { altura: 720, fps: 60 } });
+    cb(0, null);
+    cb(40, null);
+    expect(a.m.parar()!.cameraEntregue!.standby).toMatchObject({ limiarMs: 33.3, lentos: 1 });
+    const b = montar();
+    b.m.iniciar(contexto());
+    expect(b.m.parar()!.cameraEntregue).toBeNull();
+  });
+  it("bateria e energia: início e fim; sem as APIs, nulos", async () => {
+    const g = { nivel: 0.4, carregando: false };
+    let eco = false;
+    const { m } = montar({ bateria: async () => () => ({ ...g }), energia: () => ({ economia: eco, termico: 1 }) });
+    m.iniciar(contexto());
+    await Promise.resolve();
+    await Promise.resolve();
+    g.nivel = 0.38;
+    eco = true;
+    const r = m.parar()!;
+    expect(r.bateria).toEqual({ inicio: { nivel: 0.4, carregando: false }, fim: { nivel: 0.38, carregando: false } });
+    expect(r.energia).toEqual({ inicio: { economia: false, termico: 1 }, fim: { economia: true, termico: 1 } });
+    const b = montar();
+    b.m.iniciar(contexto());
+    const rb = b.m.parar()!;
+    expect(rb.bateria).toEqual({ inicio: null, fim: null });
+    expect(rb.energia).toEqual({ inicio: { economia: null, termico: null }, fim: { economia: null, termico: null } });
   });
   it("uma medição nova começa do zero", () => {
     const { m, quadro } = montar();
@@ -196,5 +261,25 @@ describe("robustez dos relatórios guardados", () => {
   it("o resumo ignora valores que não são números", () => {
     const r = { ...base, fases: { ...base.fases, correndo: { n: 5, p95Ms: "lento", acima: { "50": {} } } } } as never;
     expect(resumoDaFase(r, "correndo")).toEqual({ n: 5, p95Ms: 0, acima50: 0 });
+  });
+});
+
+describe("relatórios antigos e novos", () => {
+  const antigo = { versao: 1, quando: "2026-11-24T10:00:00.000Z", qualidadePedida: { altura: 720, fps: 30 }, cameraReal: { largura: 1280, altura: 720, fps: 30 }, quadrosDoVideo: { descartados: 1, total: 100 }, fases: { standby: { n: 3, p95Ms: 20, acima: { "50": 1 } }, correndo: { n: 5, p95Ms: 30, acima: { "50": 2 } } } };
+  it("o relatório antigo (sem os campos novos) é lido e não mostra fps real", () => {
+    const [r] = relatoriosDoTexto(JSON.stringify([antigo]));
+    expect(r).toBeDefined();
+    expect(fpsRealDaFase(r, "correndo")).toBeNull();
+    expect(fpsConfigurado(r)).toBe(30);
+  });
+  it("o novo mostra o fps entregue por fase; sem ele, o do <video> pela medição; lixo vira nulo", () => {
+    const fase = (fps: unknown) => ({ n: 9, duracaoMs: 1000, fps, p50Ms: 0, p95Ms: 0, maxMs: 0, lentos: 0, limiarMs: 66.7 });
+    const novo = { ...antigo, quadrosDoVideo: { descartados: 0, total: 60, fpsReal: 6.1, fpsPedido: 30 }, cameraEntregue: { fpsPedido: 30, standby: fase(29.8), correndo: fase(null) } };
+    const [r] = relatoriosDoTexto(JSON.stringify([novo]));
+    expect(fpsRealDaFase(r, "standby")).toBe(29.8);
+    expect(fpsRealDaFase(r, "correndo")).toBe(6.1);
+    const lixo = { ...novo, cameraEntregue: "x", quadrosDoVideo: { fpsReal: "alto" }, cameraReal: { fps: "x" } } as never;
+    expect(fpsRealDaFase(lixo, "standby")).toBeNull();
+    expect(fpsConfigurado(lixo)).toBeNull();
   });
 });

@@ -4,7 +4,7 @@
   import { data } from "./formatosHistorico";
   import { i18n } from "./i18n/index.svelte";
   import { apagarRelatoriosDeDesempenho, lerRelatoriosDeDesempenho } from "./preferencias";
-  import { arquivoDeRelatorios, resumoDaFase, type FaseDeMedicao } from "./video/desempenho";
+  import { arquivoDeRelatorios, fpsConfigurado, fpsRealDaFase, resumoDaFase, type FaseDeMedicao } from "./video/desempenho";
 
   // Ajustes → Diagnóstico de desempenho: a lista dos relatórios guardados (data, qualidade, o que estava ligado e, por fase, o p95 e os quadros acima de 50 ms),
   // o botão que entrega TODOS num arquivo .json (a folha de compartilhar do aparelho; no navegador, baixa) e o que apaga (com um segundo toque).
@@ -20,7 +20,8 @@
   };
   const faseTexto = (r: (typeof relatorios)[number], fase: FaseDeMedicao, rotulo: Parameters<typeof i18n.t>[0]) => {
     const f = resumoDaFase(r, fase);
-    return t("ajustes.desempenho_fase", { fase: t(rotulo), p95: f.p95Ms.toFixed(1), lentos: f.acima50, n: f.n });
+    const fps = fpsRealDaFase(r, fase); // o ENTREGUE pela câmera (o configurado vai na linha própria)
+    return fps === null ? t("ajustes.desempenho_fase", { fase: t(rotulo), p95: f.p95Ms.toFixed(1), lentos: f.acima50, n: f.n }) : t("ajustes.desempenho_fase_fps", { fase: t(rotulo), p95: f.p95Ms.toFixed(1), lentos: f.acima50, n: f.n, fps });
   };
   const marcas = (r: (typeof relatorios)[number]) =>
     [`${r.qualidadePedida.altura}p${r.qualidadePedida.fps}`, t("ajustes.lab_taxa_hz", { n: r.laboratorio?.taxaHz ?? 30 }), r.laboratorio?.overlayAoVivo === false ? t("ajustes.desempenho_sem_overlay") : "", r.laboratorio?.gravarVideo === false ? t("ajustes.desempenho_sem_video") : ""]
@@ -56,6 +57,7 @@
       <li>
         <strong>{quando(r.quando)}</strong> <span class="meta">{marcas(r)}</span>
         {#each FASES as [fase, rotulo] (fase)}<span class="linha">{faseTexto(r, fase, rotulo)}</span>{/each}
+        {#if fpsConfigurado(r) !== null}<span class="meta">{t("ajustes.desempenho_configurado", { fps: fpsConfigurado(r) ?? 0 })}</span>{/if}
       </li>
     {/each}
   </ul>

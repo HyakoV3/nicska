@@ -1,5 +1,6 @@
 // A ligação do medidor de desempenho (desempenho.ts) com o navegador: requestAnimationFrame, PerformanceObserver("longtask"), o <video> da prévia e a câmera.
 // Fino de propósito: a conta está no módulo puro.
+import { abrirBateria, lerEnergia } from "../energia";
 import { ambienteDoAparelho, type AmbienteDoAparelho, type ConfigDaCamera, type DepsDoMedidor } from "./desempenho";
 
 /** As dependências reais. `video` e `fluxo` dizem onde olhar (a prévia e a câmera); podem devolver nulo. */
@@ -19,6 +20,24 @@ export function depsDoNavegador(onde: { video: () => HTMLVideoElement | null; fl
         return null;
       }
     },
+    observarQuadrosEntregues: (cb) => {
+      const v = onde.video();
+      if (!v || typeof v.requestVideoFrameCallback !== "function") return null;
+      let id = 0;
+      let ativo = true;
+      const quadro: VideoFrameRequestCallback = (agora, meta) => {
+        if (!ativo) return;
+        cb(agora, typeof meta?.mediaTime === "number" ? meta.mediaTime : null);
+        id = v.requestVideoFrameCallback(quadro);
+      };
+      id = v.requestVideoFrameCallback(quadro);
+      return () => {
+        ativo = false;
+        v.cancelVideoFrameCallback?.(id);
+      };
+    },
+    bateria: () => abrirBateria(),
+    energia: () => lerEnergia(),
     qualidadeDoVideo: () => {
       const q = onde.video()?.getVideoPlaybackQuality?.();
       return q ? { descartados: q.droppedVideoFrames, total: q.totalVideoFrames } : null;

@@ -39,6 +39,8 @@ class MainActivity : TauriActivity() {
     webView.addJavascriptInterface(PonteOrientacao(this), "NkOrientacao")
     // A ponte da tela: `window.NkTela`, esconde as barras do sistema (modo imersivo) enquanto a câmera ocupa a tela inteira no modo vídeo (V2b).
     webView.addJavascriptInterface(PonteTela(this), "NkTela")
+    // A ponte da energia: `window.NkEnergia`, só lê a economia de energia e o estado térmico (diagnóstico de desempenho e aviso na gravação).
+    webView.addJavascriptInterface(PonteEnergia(this), "NkEnergia")
     outra.receber(pendente)
     pendente = null
   }
