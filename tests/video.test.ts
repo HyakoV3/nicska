@@ -20,32 +20,36 @@ describe("formato e qualidade do vídeo", () => {
     const r = restricoesDaCamera("traseira");
     expect(r.audio).toBe(false);
     expect(r.video).toMatchObject({ facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } });
-    expect(restricoesDaCamera("frontal", { altura: 1080, fps: 60 }).video).toMatchObject({ facingMode: { ideal: "user" }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } });
+    expect(restricoesDaCamera("frontal", { altura: 720, fps: 60 }).video).toMatchObject({ facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 } });
   });
   it("o bitrate cresce com a resolução e com a taxa; 720p30 = 2 Mbps (30 s ≈ 8 MB)", () => {
     expect(bitsDoVideo(qualidadePadrao())).toBe(2_000_000);
     const todas = ALTURAS.flatMap((altura) => TAXAS.map((fps) => bitsDoVideo({ altura, fps })));
-    expect(new Set(todas).size).toBe(5); // 4K só existe a 30 fps: 2160-60 vale o 2160-30
+    expect(new Set(todas).size).toBe(4); // 1080p e 4K só existem a 30 fps: 2160-60 vale o 2160-30
     expect(bitsDoVideo({ altura: 720, fps: 60 })).toBeGreaterThan(bitsDoVideo({ altura: 720, fps: 30 }));
     expect(bitsDoVideo({ altura: 1080, fps: 30 })).toBeGreaterThan(bitsDoVideo({ altura: 720, fps: 60 }));
     expect(bytesEsperados(30)).toBeGreaterThan(7 * MB);
     expect(bytesEsperados(30)).toBeLessThan(9 * MB);
-    expect(bytesEsperados(30, { altura: 1080, fps: 60 })).toBeGreaterThan(bytesEsperados(30) * 2.5);
+    expect(bytesEsperados(30, { altura: 1080, fps: 30 })).toBeGreaterThan(bytesEsperados(30) * 1.9);
   });
   it("4K (2160p): avançado, só 30 fps, ~18 Mbps, pede 3840x2160", () => {
     expect(ALTURAS).toEqual([720, 1080, 2160]);
     expect(taxasDa(2160)).toEqual([30]);
-    expect(taxasDa(1080)).toEqual([30, 60]);
+    expect(taxasDa(1080)).toEqual([30]);
+    expect(taxasDa(720)).toEqual([30, 60]);
+    expect(normalizarQualidade({ altura: 1080, fps: 60 })).toEqual({ altura: 1080, fps: 30 });
+    expect(normalizarQualidade({ altura: 720, fps: 60 })).toEqual({ altura: 720, fps: 60 });
+    expect(bitsDoVideo({ altura: 1080, fps: 60 })).toBe(4_000_000);
     expect(normalizarQualidade({ altura: 2160, fps: 60 })).toEqual({ altura: 2160, fps: 30 });
     expect(bitsDoVideo({ altura: 2160, fps: 30 })).toBe(18_000_000);
     expect(bitsDoVideo({ altura: 2160, fps: 60 })).toBe(18_000_000);
-    expect(bitsDoVideo({ altura: 2160, fps: 30 })).toBeGreaterThan(bitsDoVideo({ altura: 1080, fps: 60 }) * 2.5);
+    expect(bitsDoVideo({ altura: 2160, fps: 30 })).toBeGreaterThan(bitsDoVideo({ altura: 1080, fps: 30 }) * 2.5);
     expect(restricoesDaCamera("traseira", { altura: 2160, fps: 30 }).video).toMatchObject({ width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30 } });
   });
   it("tabela de tamanhos: o maior vídeo (200 s) em cada qualidade", () => {
     const mib = (q: Parameters<typeof bytesEsperados>[1]) => bytesEsperados(DURACAO_MAXIMA_DO_VIDEO_S, q) / MB;
     expect(mib({ altura: 720, fps: 30 })).toBeCloseTo(49.2, 0);
-    expect(mib({ altura: 1080, fps: 60 })).toBeCloseTo(144.6, 0);
+    expect(mib({ altura: 1080, fps: 30 })).toBeCloseTo(96.9, 0);
     expect(mib({ altura: 2160, fps: 30 })).toBeCloseTo(431.0, 0);
     expect(bytesEsperados(60, { altura: 2160, fps: 30 }) / MB).toBeCloseTo(129.2, 0);
   });
@@ -55,7 +59,8 @@ describe("formato e qualidade do vídeo", () => {
     expect(qualidadeEntregue(q4k, 1080)).toEqual({ altura: 1080, fps: 30 });
     expect(qualidadeEntregue(q4k, 1440)).toEqual({ altura: 1080, fps: 30 });
     expect(qualidadeEntregue(q4k, 480)).toEqual({ altura: 720, fps: 30 });
-    expect(qualidadeEntregue({ altura: 1080, fps: 60 }, 2160)).toEqual({ altura: 1080, fps: 60 });
+    expect(qualidadeEntregue({ altura: 720, fps: 60 }, 2160)).toEqual({ altura: 720, fps: 60 });
+    expect(qualidadeEntregue({ altura: 1080, fps: 60 }, 2160)).toEqual({ altura: 1080, fps: 30 });
     expect(qualidadeEntregue(q4k, null)).toEqual(q4k);
   });
 });
@@ -229,8 +234,10 @@ describe("preferências de qualidade e de retenção", () => {
   });
   it("a qualidade começa em 720p30, lembra a escolha e ignora lixo", () => {
     expect(lerQualidade()).toEqual({ altura: 720, fps: 30 });
-    salvarQualidade({ altura: 1080, fps: 60 });
-    expect(lerQualidade()).toEqual({ altura: 1080, fps: 60 });
+    salvarQualidade({ altura: 720, fps: 60 });
+    expect(lerQualidade()).toEqual({ altura: 720, fps: 60 });
+    mem["prefs.videoQualidade"] = JSON.stringify({ altura: 1080, fps: 60 }); // guardada antes de o 1080p60 sair
+    expect(lerQualidade()).toEqual({ altura: 1080, fps: 30 });
     mem["prefs.videoQualidade"] = JSON.stringify({ altura: 4320, fps: 240 });
     expect(lerQualidade()).toEqual({ altura: 720, fps: 30 });
   });

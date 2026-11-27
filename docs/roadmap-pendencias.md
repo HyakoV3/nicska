@@ -86,6 +86,8 @@ Tudo o que é ideia (fala, V4, restos do vídeo, editar tentativa, nota S/A/B/C/
 - **Outro suspeito (já existia):** o laço `requestAnimationFrame` do cronômetro ao vivo redesenhava o overlay a cada quadro; no 0.1.5 foi limitado (centésimo muda, 30 Hz) e o `Intl.NumberFormat` ganhou cache.
 - **Como testar:** o 0.1.5 traz o Laboratório (overlay ao vivo, taxa 60/30/10 Hz, gravar vídeo sim/não) e o Diagnóstico de desempenho (Ajustes → compartilhar relatório). Próximo passo combinado: um interruptor "Bloqueios de toque (pinça e seleção)" no Laboratório, para comparar com e sem os três itens acima no mesmo APK.
 
+- **1080p limitado a 30 fps (2026-11-27):** o relatório de desempenho no motorola edge 30 pro mostrou a câmera entregando ~6 fps reais em 1080p60 (720p60 ~30; 720p30 ~23 a 30), com a bateria abaixo de 10% e a economia de energia ligada. 1080p passou a só 30 fps, como o 4K (`taxasDa`/`normalizarQualidade`; preferência guardada 1080p60 é lida como 1080p30; 720p mantém 30 e 60). O relatório agora traz o fps ENTREGUE por fase (`cameraEntregue`, via `requestVideoFrameCallback`; `cameraReal.fps` é só o configurado), a bateria e a economia de energia (ponte `NkEnergia`) no início e no fim, e a gravação avisa (faixa de 6 s) com bateria <= 15% fora da tomada ou economia ligada. Reavaliar o 1080p60 após teste com a bateria carregada e sem economia.
+
 ## 8c. Alerta do Dependabot: `glib` (GHSA-wrw7-89jp-8q8g), aguardando o Tauri (2026-11-25)
 
 - **O que é:** Dependabot #6, severidade média. `glib` 0.18.5, vindo de `tauri 2.12.7 → gtk 0.18`. Só entra no build de **desktop Linux**; o APK não o contém (`cargo tree --target aarch64-linux-android -i glib` não encontra nada).

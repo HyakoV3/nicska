@@ -5,6 +5,7 @@
   import OverlayAoVivo from "./OverlayAoVivo.svelte";
   import Previa from "./Previa.svelte";
   import { i18n } from "./i18n/index.svelte";
+  import { abrirBateria, avisoDeEnergia, lerEnergia } from "./energia";
   import { registrarNivel } from "./navegacao";
   import { soltarOrientacao, travarOrientacao } from "./orientacao";
   import { guardarRelatorioDeDesempenho, lerAvisoEnquadrarVisto, lerAvisoVideoVisto, lerLaboratorio, lerOverlay, lerQualidade, lerRegistro, salvarAvisoEnquadrarVisto, salvarAvisoVideoVisto } from "./preferencias";
@@ -70,6 +71,22 @@
     relogioDaDica = setTimeout(() => (dica = false), 4000);
   }
   $effect(() => () => void (relogioDaDica && clearTimeout(relogioDaDica)));
+
+  // O aviso de energia, ao abrir: bateria em 15% ou menos e fora da tomada, ou economia de energia ligada. Discreto, não bloqueia nada, some em 6 s ou ao toque.
+  let energiaFraca = $state(false);
+  $effect(() => {
+    let vivo = true;
+    let relogio: ReturnType<typeof setTimeout> | null = null;
+    abrirBateria().then((ler) => {
+      if (!vivo || !avisoDeEnergia(ler?.() ?? null, lerEnergia().economia)) return;
+      energiaFraca = true;
+      relogio = setTimeout(() => (energiaFraca = false), 6000);
+    });
+    return () => {
+      vivo = false;
+      if (relogio) clearTimeout(relogio);
+    };
+  });
 
   /** O Voltar do Android e o Esc: o que a regra mandar para o passo de agora. */
   function voltar() {
@@ -156,6 +173,7 @@
 <dialog bind:this={caixa} class="tela-cheia" aria-label={t("tela_video.aria")} oncancel={cancelarEvento} onclose={aoFechar} oncontextmenu={(e) => e.preventDefault()}>
   <Previa {camera} ocupado={!enquadrar} bind:fluxo />
   <p class="so-leitor" role="status">{anuncio}</p>
+  {#if energiaFraca}<p class="aviso-energia" role="status" onpointerdown={() => (energiaFraca = false)}>{t("tela_video.aviso_energia")}</p>{/if}
 
   {#if enquadrar}
     <!-- Sem "Começar": o Standby já foi pedido na aba. A câmera abre aqui (a permissão também) e, pronta, o Standby começa sozinho; até lá só há o Sair, grande, no fundo. -->
@@ -203,5 +221,6 @@
   .segurar-igual:focus-visible { outline: 0.25rem solid var(--foco); outline-offset: 0.2rem; }
   :global(:root[data-tema="alto-contraste"]) .segurar-igual { background: black; }
   .dica, .aviso-video { margin: 0; padding: 0.5rem 0.7rem; border-radius: 0.6rem; background: black; color: white; border: 0.125rem solid white; font-weight: 600; }
+  .aviso-energia { margin: 0; position: absolute; left: max(0.8rem, env(safe-area-inset-left)); right: max(0.8rem, env(safe-area-inset-right)); bottom: max(5rem, env(safe-area-inset-bottom)); padding: 0.4rem 0.7rem; border-radius: 0.6rem; background: black; color: white; border: 0.0625rem solid white; font-size: 0.9rem; text-align: center; opacity: 0.9; z-index: 2; }
   .aviso-video { position: absolute; left: max(0.8rem, env(safe-area-inset-left)); right: max(0.8rem, env(safe-area-inset-right)); top: max(0.8rem, env(safe-area-inset-top)); }
 </style>

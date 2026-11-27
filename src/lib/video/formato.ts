@@ -8,17 +8,17 @@ export type Qualidade = { altura: Altura; fps: 30 | 60 };
 export const ALTURAS = [720, 1080, 2160] as const;
 export const TAXAS = [30, 60] as const;
 export const qualidadePadrao = (): Qualidade => ({ altura: 720, fps: 30 });
-/** As taxas de cada resolução: 4K só a 30 fps (4K60 passa de 30 Mbps e quase nenhum aparelho segura gravando e codificando ao mesmo tempo). */
-export const taxasDa = (altura: Altura): readonly (30 | 60)[] => (altura === 2160 ? [30] : TAXAS);
-/** Uma qualidade possível: 4K volta para 30 fps. */
-export const normalizarQualidade = (q: Qualidade): Qualidade => (q.altura === 2160 && q.fps !== 30 ? { altura: 2160, fps: 30 } : q);
+/** As taxas de cada resolução: 4K e 1080p só a 30 fps (4K60 passa de 30 Mbps; o 1080p60 entregou ~6 fps reais no aparelho de teste, relatório de desempenho); 720p tem 30 e 60. */
+export const taxasDa = (altura: Altura): readonly (30 | 60)[] => (altura === 720 ? TAXAS : [30]);
+/** Uma qualidade possível: 4K e 1080p voltam para 30 fps (uma preferência guardada como 1080p60 é lida como 1080p30). */
+export const normalizarQualidade = (q: Qualidade): Qualidade => (q.altura !== 720 && q.fps !== 30 ? { altura: q.altura, fps: 30 } : q);
 
 /**
- * Bitrate do vídeo (bits por segundo) de cada qualidade: 720p30 = 2 Mbps; o dobro de quadros pede ~1,75x; 1080p tem 2,25x os pixels. 4K30 = 18 Mbps
+ * Bitrate do vídeo (bits por segundo) de cada qualidade: 720p30 = 2 Mbps; o dobro de quadros pede ~1,75x; 1080p tem 2,25x os pixels (1080p60 saiu: `normalizarQualidade` o leva a 30 fps). 4K30 = 18 Mbps
  * (4x os pixels do 1080p; as referências de H.264 em 4K30 vão de ~16 Mbps (recomendação de streaming) a ~40 Mbps (câmera de celular): fica na parte baixa
  * porque o codificador do WebView é de hardware simples e a prioridade é não esquentar nem encher o espaço; para ver o cronômetro e o disparo basta).
  */
-const BITS_DO_VIDEO: Record<string, number> = { "720-30": 2_000_000, "720-60": 3_500_000, "1080-30": 4_000_000, "1080-60": 6_000_000, "2160-30": 18_000_000 };
+const BITS_DO_VIDEO: Record<string, number> = { "720-30": 2_000_000, "720-60": 3_500_000, "1080-30": 4_000_000, "2160-30": 18_000_000 };
 export const bitsDoVideo = (q: Qualidade): number => { const n = normalizarQualidade(q); return BITS_DO_VIDEO[`${n.altura}-${n.fps}`]; };
 export const BITS_DO_AUDIO_NO_VIDEO = 64_000;
 const LARGURAS = { 720: 1280, 1080: 1920, 2160: 3840 } as const;
