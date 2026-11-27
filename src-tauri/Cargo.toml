@@ -1,6 +1,6 @@
 [package]
 name = "nicska"
-version = "0.1.5"
+version = "0.1.6"
 description = "Nicska - shot timer de IPSC, gratuito e de código aberto"
 authors = []
 license = "MIT"
